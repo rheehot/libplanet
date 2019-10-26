@@ -324,7 +324,7 @@ namespace Libplanet.Blockchain
         /// this exception is not thrown and incomplete states are calculated
         /// and filled on the fly instead.
         /// </exception>
-        public AddressStateMap GetState(
+        public IValue GetState(
             Address address,
             HashDigest<SHA256>? offset = null,
             bool completeStates = false
@@ -347,7 +347,7 @@ namespace Libplanet.Blockchain
 
             if (offset == null)
             {
-                return states;
+                return null;
             }
 
             Block<T> block = this[offset.Value];
@@ -365,7 +365,7 @@ namespace Libplanet.Blockchain
 
             if (stateReference is null)
             {
-                return states;
+                return null;
             }
 
             HashDigest<SHA256> hashValue = stateReference.Item1;
@@ -390,7 +390,7 @@ namespace Libplanet.Blockchain
                                 a => GetState(
                                      a,
                                      b.PreviousHash
-                                ).GetValueOrDefault(a)
+                                )
                             ).ToList();
 
                         if (Policy.BlockAction is IAction)
@@ -422,11 +422,10 @@ namespace Libplanet.Blockchain
                 }
             }
 
-            states = (AddressStateMap)states.SetItems(
-                blockStates.Where(kv => address.Equals(kv.Key))
-            );
-
-            return states;
+            return blockStates
+                .Where(kv => address.Equals(kv.Key))
+                .Select(kv => kv.Value)
+                .FirstOrDefault();
         }
 
         /// <summary>
@@ -837,7 +836,7 @@ namespace Libplanet.Blockchain
             }
             else
             {
-                stateGetter = a => GetState(a, block.PreviousHash).GetValueOrDefault(a);
+                stateGetter = a => GetState(a, block.PreviousHash);
             }
 
             ImmutableList<ActionEvaluation> txEvaluations = block
@@ -873,7 +872,7 @@ namespace Libplanet.Blockchain
             if (lastStates is null)
             {
                 lastStates = new AccountStateDeltaImpl(
-                    a => GetState(a, block.PreviousHash).GetValueOrDefault(a));
+                    a => GetState(a, block.PreviousHash));
             }
 
             return ActionEvaluation.EvaluateActionsGradually(
@@ -1129,7 +1128,7 @@ namespace Libplanet.Blockchain
                 )
                 {
                     List<ActionEvaluation> evaluations = b.EvaluateActionsPerTx(a =>
-                            GetState(a, b.PreviousHash).GetValueOrDefault(a))
+                            GetState(a, b.PreviousHash))
                         .Select(te => te.Item2).ToList();
 
                     if (Policy.BlockAction is IAction)

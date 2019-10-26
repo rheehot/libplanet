@@ -1666,7 +1666,7 @@ namespace Libplanet.Tests.Net
                 await receiverSwarm.PreloadAsync(true);
                 var states = receiverChain.GetState(address);
 
-                Assert.Equal("foo,bar,baz", (Text)states[address]);
+                Assert.Equal("foo,bar,baz", (Text)states);
                 Assert.Equal(minerChain.AsEnumerable(), receiverChain.AsEnumerable());
             }
             finally
@@ -1918,18 +1918,18 @@ namespace Libplanet.Tests.Net
                     foreach (BlockChain<DumbAction> chain in new[] { minerChain, receiverChain })
                     {
                         var chainType = ReferenceEquals(chain, minerChain) ? "M" : "R";
-                        var states = chain.GetState(
+                        var state = chain.GetState(
                             target,
                             completeStates: false
                         );
-                        Assert.Single(states);
+                        Assert.NotNull(state);
                         Assert.Equal(
                             $"({chainType}) Item0.{i},Item1.{i},Item2.{i}",
-                            $"({chainType}) {states[target]}"
+                            $"({chainType}) {state}"
                         );
                     }
 
-                    AddressStateMap TryToGetDeepStates() => receiverChain.GetState(
+                    IValue TryToGetDeepState() => receiverChain.GetState(
                         target,
                         deepBlockHash,
                         completeStates: false
@@ -1938,14 +1938,14 @@ namespace Libplanet.Tests.Net
                     if (trust)
                     {
                         Assert.Throws<IncompleteBlockStatesException>(
-                            () => TryToGetDeepStates()
+                            () => TryToGetDeepState()
                         );
                     }
                     else
                     {
-                        var deepStates = TryToGetDeepStates();
-                        Assert.Single(deepStates);
-                        Assert.Equal($"Item0.{i},Item1.{i}", (Text)deepStates[target]);
+                        var deepState = TryToGetDeepState();
+                        Assert.NotNull(deepState);
+                        Assert.Equal($"Item0.{i},Item1.{i}", (Text)deepState);
                     }
 
                     i++;
@@ -1955,12 +1955,12 @@ namespace Libplanet.Tests.Net
                 {
                     foreach (BlockChain<DumbAction> chain in new[] { minerChain, receiverChain })
                     {
-                        var states = chain.GetState(
+                        var state = chain.GetState(
                             genesisTarget,
                             completeStates: false
                         );
-                        Assert.Single(states);
-                        Assert.Equal("Genesis", (Text)states[genesisTarget]);
+                        Assert.NotNull(state);
+                        Assert.Equal("Genesis", (Text)state);
                     }
                 }
 
@@ -1969,10 +1969,10 @@ namespace Libplanet.Tests.Net
                     var minerState = chain.GetState(
                         minerSwarm.Address,
                         completeStates: false);
-                    Assert.Single(minerState);
+                    Assert.NotNull(minerState);
                     Assert.Equal(
                         (genesisWithAction ? 1 : 0) + repeat * fixturePairs.Length,
-                        (Integer)minerState[minerSwarm.Address]
+                        (Integer)minerState
                     );
                 }
             }
@@ -2098,7 +2098,7 @@ namespace Libplanet.Tests.Net
             {
                 Assert.Equal(receiverChainId, receiverChain.Id);
                 Assert.Null(receiverChain.Tip);
-                Assert.Null(receiverChain.GetState(address).GetValueOrDefault(address));
+                Assert.Null(receiverChain.GetState(address));
             }
             else
             {
@@ -2111,7 +2111,7 @@ namespace Libplanet.Tests.Net
                             string.Join(",", Enumerable.Range(0, 5).Select(j => $"Item{i}.{j}"))
                         )
                     ),
-                    receiverChain.GetState(address)[address].ToString()
+                    receiverChain.GetState(address).ToString()
                 );
             }
         }
