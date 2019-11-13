@@ -1182,7 +1182,7 @@ namespace Libplanet.Tests.Blockchain
                 Assert.Equal(new AddressStateMap(), states);
             }
 
-            var privateKeysAndAddresses10 = privateKeys.Zip(addresses, (k, a) => (k, a));
+            var privateKeysAndAddresses10 = privateKeys.Zip(addresses, Tuple.Create);
             foreach (var (key, address) in privateKeysAndAddresses10)
             {
                 chain.MakeTransaction(key, new[] { new DumbAction(address, "1") });
