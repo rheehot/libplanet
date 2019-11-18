@@ -107,6 +107,7 @@ namespace Libplanet.Tests.Net
                 Log.Logger.Debug(
                     $"Finished to {nameof(Dispose)}() {nameof(Swarm<DumbAction>)} instances."
                 );
+                Task.Delay(100).Wait();
 
                 NetMQConfig.Cleanup(false);
                 Log.Logger.Debug($"Finished to clean up the {nameof(NetMQConfig)} singleton.");
@@ -365,6 +366,7 @@ namespace Libplanet.Tests.Net
                 Assert.Single(swarmA.Peers);
 
                 await StopAsync(swarmB);
+                await Task.Delay(10);
                 await swarmA.Protocol.RefreshTableAsync(TimeSpan.Zero, default(CancellationToken));
                 Assert.Empty(swarmA.Peers);
             }
@@ -2301,7 +2303,7 @@ namespace Libplanet.Tests.Net
         private Task StopAsyncSwarms<T>(IEnumerable<Swarm<T>> swarms)
             where T : IAction, new()
         {
-            var tasks = swarms.Select(s => s.StopAsync(TimeSpan.Zero));
+            var tasks = swarms.Select(StopAsync);
             return Task.WhenAll(tasks);
         }
 
