@@ -93,7 +93,7 @@ namespace Libplanet.Tests.Net
                 int i = 1;
                 foreach (Swarm<DumbAction> s in _swarms)
                 {
-                    s.StopAsync().Wait(DisposeTimeout);
+                    StopAsync(s).Wait(DisposeTimeout);
                     Log.Logger.Debug(
                         $"Finished to {nameof(Dispose)}() a {nameof(Swarm<DumbAction>)} " +
                         "instance #{0}.",
@@ -145,7 +145,7 @@ namespace Libplanet.Tests.Net
                 $"Expected SwarmException, but actual exception was: {t.Exception.InnerException}"
             );
 
-            await swarm.StopAsync();
+            await StopAsync(swarm);
         }
 
         [Fact(Timeout = Timeout)]
@@ -162,7 +162,7 @@ namespace Libplanet.Tests.Net
                 await StartAsync(swarmA);
                 await StartAsync(swarmB);
                 await swarmA.AddPeersAsync(new[] { seed.AsPeer }, null);
-                await swarmA.StopAsync();
+                await StopAsync(swarmA);
                 await swarmB.AddPeersAsync(new[] { seed.AsPeer }, null);
 
                 Assert.Contains(swarmB.AsPeer, seed.Peers);
@@ -170,9 +170,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await seed.StopAsync();
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
+                await StopAsyncSwarms(new[] { seed, swarmA, swarmB });
 
                 seed.Dispose();
                 swarmA.Dispose();
@@ -204,7 +202,7 @@ namespace Libplanet.Tests.Net
                 Assert.Equal(swarmA.AsPeer, swarmB.AsPeer);
 
                 await swarmA.AddPeersAsync(new[] { seed.AsPeer }, null);
-                await swarmA.StopAsync();
+                await StopAsync(swarmA);
                 await swarmB.AddPeersAsync(new[] { seed.AsPeer }, null);
 
                 Assert.Contains(swarmB.AsPeer, seed.Peers);
@@ -219,9 +217,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await seed.StopAsync();
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
+                await StopAsyncSwarms(new[] { seed, swarmA, swarmB });
 
                 seed.Dispose();
                 swarmA.Dispose();
@@ -230,16 +226,16 @@ namespace Libplanet.Tests.Net
         }
 
         [Fact(Timeout = Timeout)]
-        public async Task StopAsync()
+        public async Task StopAsyncTest()
         {
             Swarm<DumbAction> swarm = _swarms[0];
             BlockChain<DumbAction> chain = _blockchains[0];
 
-            await swarm.StopAsync();
+            await StopAsync(swarm);
             var task = await StartAsync(swarm);
 
             Assert.True(swarm.Running);
-            await swarm.StopAsync();
+            await StopAsync(swarm);
 
             Assert.False(swarm.Running);
 
@@ -273,7 +269,7 @@ namespace Libplanet.Tests.Net
             await consumerTask;
             Assert.True(swarm.Running);
 
-            await swarm.StopAsync();
+            await StopAsync(swarm);
             Assert.False(swarm.Running);
         }
 
@@ -294,8 +290,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await a.StopAsync();
-                await b.StopAsync();
+                await StopAsyncSwarms(new[] { a, b });
             }
         }
 
@@ -317,8 +312,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await a.StopAsync();
-                await b.StopAsync();
+                await StopAsyncSwarms(new[] { a, b });
             }
         }
 
@@ -340,7 +334,7 @@ namespace Libplanet.Tests.Net
                 Assert.Contains(swarmB.AsPeer, swarmA.Peers);
                 Assert.Contains(swarmC.AsPeer, swarmA.Peers);
 
-                await swarmC.StopAsync();
+                await StopAsync(swarmC);
                 await Assert.ThrowsAsync<TimeoutException>(
                     () => swarmA.AddPeersAsync(new[] { swarmC.AsPeer }, TimeSpan.FromSeconds(3)));
                 await swarmA.AddPeersAsync(new[] { swarmB.AsPeer }, null);
@@ -349,12 +343,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
-                if (swarmC.Running)
-                {
-                    await swarmC.StopAsync();
-                }
+                await StopAsyncSwarms(new[] { swarmA, swarmB, swarmC });
 
                 swarmA.Dispose();
                 swarmB.Dispose();
@@ -375,13 +364,13 @@ namespace Libplanet.Tests.Net
                 await swarmA.AddPeersAsync(new[] { swarmB.AsPeer }, null);
                 Assert.Single(swarmA.Peers);
 
-                await swarmB.StopAsync();
+                await StopAsync(swarmB);
                 await swarmA.Protocol.RefreshTableAsync(TimeSpan.Zero, default(CancellationToken));
                 Assert.Empty(swarmA.Peers);
             }
             finally
             {
-                await swarmA.StopAsync();
+                await StopAsync(swarmA);
             }
         }
 
@@ -416,10 +405,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarm.StopAsync();
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
-                await swarmC.StopAsync();
+                await StopAsyncSwarms(new[] { swarm, swarmA, swarmB, swarmC });
                 fx.Dispose();
                 swarm.Dispose();
             }
@@ -452,7 +438,7 @@ namespace Libplanet.Tests.Net
                 Assert.Contains(swarmA.AsPeer, swarm.Peers);
                 Assert.DoesNotContain(swarmB.AsPeer, swarm.Peers);
 
-                await swarmA.StopAsync();
+                await StopAsync(swarmA);
                 await swarmC.AddPeersAsync(new[] { swarm.AsPeer }, null);
                 await swarm.Protocol.RefreshTableAsync(TimeSpan.Zero, default(CancellationToken));
                 await swarm.Protocol.CheckReplacementCacheAsync(default(CancellationToken));
@@ -464,9 +450,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarm.StopAsync();
-                await swarmB.StopAsync();
-                await swarmC.StopAsync();
+                await StopAsyncSwarms(new[] { swarm, swarmA, swarmB, swarmC });
                 fx.Dispose();
                 swarm.Dispose();
             }
@@ -499,8 +483,8 @@ namespace Libplanet.Tests.Net
                 Assert.Contains(swarmA.AsPeer, swarm.Peers);
                 Assert.DoesNotContain(swarmB.AsPeer, swarm.Peers);
 
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
+                await StopAsync(swarmA);
+                await StopAsync(swarmB);
 
                 await swarmC.AddPeersAsync(new[] { swarm.AsPeer }, null);
                 await swarm.Protocol.RefreshTableAsync(TimeSpan.Zero, default(CancellationToken));
@@ -513,8 +497,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarm.StopAsync();
-                await swarmC.StopAsync();
+                await StopAsyncSwarms(new[] { swarm, swarmA, swarmB, swarmC });
                 fx.Dispose();
                 swarm.Dispose();
             }
@@ -535,8 +518,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
+                await StopAsyncSwarms(new[] { swarmA, swarmB });
             }
         }
 
@@ -560,9 +542,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
-                await swarmC.StopAsync();
+                await StopAsyncSwarms(new[] { swarmA, swarmB, swarmC });
             }
         }
 
@@ -586,8 +566,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
+                await StopAsyncSwarms(new[] { swarmA, swarmB });
             }
         }
 
@@ -627,9 +606,9 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
+                await StopAsyncSwarms(swarms);
                 for (int i = 0; i < size; i++)
                 {
-                    await swarms[i].StopAsync();
                     fxs[i].Dispose();
                     swarms[i].Dispose();
                 }
@@ -701,8 +680,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await a.StopAsync();
-                await b.StopAsync();
+                await StopAsyncSwarms(new[] { a, b });
             }
 
             Log.Debug($"chainA: {string.Join(",", chainA)}");
@@ -739,8 +717,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await c.StopAsync();
-                await d.StopAsync();
+                await StopAsyncSwarms(new[] { c, d });
 
                 a.Dispose();
                 b.Dispose();
@@ -775,8 +752,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await a.StopAsync();
-                await b.StopAsync();
+                await StopAsyncSwarms(new[] { a, b });
 
                 a.Dispose();
                 b.Dispose();
@@ -858,8 +834,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
+                await StopAsyncSwarms(new[] { swarmA, swarmB });
             }
         }
 
@@ -918,8 +893,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
+                await StopAsyncSwarms(new[] { swarmA, swarmB });
 
                 swarmB.Dispose();
             }
@@ -957,8 +931,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
+                await StopAsyncSwarms(new[] { swarmA, swarmB });
             }
         }
 
@@ -1002,9 +975,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
-                await swarmC.StopAsync();
+                await StopAsyncSwarms(new[] { swarmA, swarmB, swarmC });
             }
         }
 
@@ -1039,7 +1010,7 @@ namespace Libplanet.Tests.Net
                 await swarmB.TxReceived.WaitAsync();
                 Assert.Equal(tx, chainB.GetTransaction(tx.Id));
 
-                await swarmA.StopAsync();
+                await StopAsync(swarmA);
 
                 // Re-Broadcast received tx swarmB to swarmC
                 await swarmB.AddPeersAsync(new[] { swarmC.AsPeer }, null);
@@ -1049,9 +1020,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
-                await swarmC.StopAsync();
+                await StopAsyncSwarms(new[] { swarmA, swarmB, swarmC });
             }
         }
 
@@ -1108,9 +1077,9 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
+                await StopAsyncSwarms(swarms);
                 for (int i = 0; i < size; i++)
                 {
-                    await swarms[i].StopAsync();
                     fxs[i].Dispose();
                     swarms[i].Dispose();
                 }
@@ -1182,9 +1151,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
-                await swarmC.StopAsync();
+                await StopAsyncSwarms(new[] { swarmA, swarmB, swarmC });
             }
         }
 
@@ -1263,8 +1230,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await minerSwarm.StopAsync();
-                await receiverSwarm.StopAsync();
+                await StopAsyncSwarms(new[] { minerSwarm, receiverSwarm });
                 fx.Dispose();
                 minerSwarm.Dispose();
             }
@@ -1302,8 +1268,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
+                await StopAsyncSwarms(new[] { swarmA, swarmB });
             }
         }
 
@@ -1348,8 +1313,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
+                await StopAsyncSwarms(new[] { swarmA, swarmB });
             }
         }
 
@@ -1423,7 +1387,7 @@ namespace Libplanet.Tests.Net
 
                 await StartAsync(swarm);
                 Assert.IsType<BoundPeer>(swarm.AsPeer);
-                await swarm.StopAsync();
+                await StopAsync(swarm);
             }
         }
 
@@ -1472,9 +1436,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await seed.StopAsync();
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
+                await StopAsyncSwarms(new[] { seed, swarmA, swarmB });
 
                 seed.Dispose();
                 swarmA.Dispose();
@@ -1507,8 +1469,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await minerSwarm.StopAsync();
-                await receiverSwarm.StopAsync();
+                await StopAsyncSwarms(new[] { minerSwarm, receiverSwarm });
             }
         }
 
@@ -1549,7 +1510,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await minerSwarm.StopAsync();
+                await StopAsync(minerSwarm);
             }
         }
 
@@ -1626,8 +1587,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await minerSwarm.StopAsync();
-                await receiverSwarm.StopAsync();
+                await StopAsyncSwarms(new[] { minerSwarm, receiverSwarm });
             }
         }
 
@@ -1716,10 +1676,10 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await minerSwarm.StopAsync();
-                await nominerSwarm0.StopAsync();
-                await nominerSwarm1.StopAsync();
-                await receiverSwarm.StopAsync();
+                await StopAsyncSwarms(new[]
+                {
+                    minerSwarm, nominerSwarm0, nominerSwarm1, receiverSwarm,
+                });
 
                 nominerSwarm0.Dispose();
                 nominerSwarm1.Dispose();
@@ -1771,7 +1731,7 @@ namespace Libplanet.Tests.Net
                     }
 
                     startedStop = true;
-                    await shouldStopSwarm.StopAsync(TimeSpan.Zero);
+                    await StopAsync(shouldStopSwarm);
                 }));
 
             Assert.Equal(swarm1.BlockChain.BlockHashes, receiverSwarm.BlockChain.BlockHashes);
@@ -1917,8 +1877,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await minerSwarm.StopAsync();
-                await receiverSwarm.StopAsync();
+                await StopAsyncSwarms(new[] { minerSwarm, receiverSwarm });
 
                 DumbAction.RenderRecords.Value = ImmutableList<RenderRecord>.Empty;
                 MinerReward.RenderRecords.Value = ImmutableList<RenderRecord>.Empty;
@@ -1971,7 +1930,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await senderSwarm.StopAsync();
+                await StopAsync(senderSwarm);
             }
 
             Assert.Equal(senderChain.BlockHashes, receiverChain.BlockHashes);
@@ -2099,8 +2058,7 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await swarm1.StopAsync();
-                await swarm2.StopAsync();
+                await StopAsyncSwarms(new[] { swarm1, swarm2 });
 
                 swarm1.Dispose();
                 swarm2.Dispose();
@@ -2151,8 +2109,8 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await miner1.StopAsync();
-                await miner2.StopAsync();
+                await StopAsyncSwarms(new[] { miner1, miner2 });
+
                 miner1.Dispose();
                 miner2.Dispose();
                 receiver.Dispose();
@@ -2211,9 +2169,8 @@ namespace Libplanet.Tests.Net
             }
             finally
             {
-                await minerSwarmA.StopAsync();
-                await minerSwarmB.StopAsync();
-                await receiverSwarm.StopAsync();
+                await StopAsyncSwarms(new[] { minerSwarmA, minerSwarmB, receiverSwarm });
+
                 minerSwarmA.Dispose();
                 minerSwarmB.Dispose();
                 receiverSwarm.Dispose();
@@ -2242,15 +2199,14 @@ namespace Libplanet.Tests.Net
 
                 swarmA.BroadcastBlocks(new[] { block });
                 await swarmB.FillBlocksAsyncStarted.WaitAsync();
-                await swarmA.StopAsync();
+                await StopAsync(swarmA);
                 await swarmB.FillBlocksAsyncFailed.WaitAsync();
 
                 Assert.NotEmpty(chainB.GetState(_fx1.Address1));
             }
             finally
             {
-                await swarmA.StopAsync();
-                await swarmB.StopAsync();
+                await StopAsyncSwarms(new[] { swarmA, swarmB });
             }
         }
 
@@ -2334,6 +2290,19 @@ namespace Libplanet.Tests.Net
             Task task = swarm.StartAsync(200, 200, cancellationToken);
             await swarm.WaitForRunningAsync();
             return task;
+        }
+
+        private Task StopAsync<T>(Swarm<T> swarm)
+            where T : IAction, new()
+        {
+            return swarm.StopAsync(TimeSpan.Zero);
+        }
+
+        private Task StopAsyncSwarms<T>(IEnumerable<Swarm<T>> swarms)
+            where T : IAction, new()
+        {
+            var tasks = swarms.Select(s => s.StopAsync(TimeSpan.Zero));
+            return Task.WhenAll(tasks);
         }
 
         private async Task BootstrapAsync<T>(
