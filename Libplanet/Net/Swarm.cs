@@ -304,10 +304,7 @@ namespace Libplanet.Net
             {
                 if (Running)
                 {
-                    if (_broadcastQueue.Any() || _replyQueue.Any())
-                    {
-                        await Task.Delay(waitFor, cancellationToken);
-                    }
+                    await Task.Delay(waitFor, cancellationToken);
 
                     _broadcastQueue.ReceiveReady -= DoBroadcast;
                     _replyQueue.ReceiveReady -= DoReply;
