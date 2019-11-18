@@ -29,7 +29,7 @@ namespace Libplanet.Tests.Net
 {
     public class SwarmTest : IDisposable
     {
-        private const int Timeout = 60 * 1000;
+        private const int Timeout = 30 * 1000;
         private const int DisposeTimeout = 5 * 1000;
 
         private static Block<DumbAction>[] _fixtureBlocksForPreloadAsyncCancellationTest;
