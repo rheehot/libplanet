@@ -107,7 +107,6 @@ namespace Libplanet.Tests.Net
                 Log.Logger.Debug(
                     $"Finished to {nameof(Dispose)}() {nameof(Swarm<DumbAction>)} instances."
                 );
-                Task.Delay(100).Wait();
 
                 NetMQConfig.Cleanup(false);
                 Log.Logger.Debug($"Finished to clean up the {nameof(NetMQConfig)} singleton.");
