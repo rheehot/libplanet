@@ -76,6 +76,10 @@ namespace Libplanet.Tests.Net
                 CreateSwarm(_blockchains[2]),
             };
 
+            _swarms[0].BlockHashRecvTimeout = TimeSpan.FromMilliseconds(100);
+            _swarms[1].BlockHashRecvTimeout = TimeSpan.FromMilliseconds(100);
+            _swarms[2].BlockHashRecvTimeout = TimeSpan.FromMilliseconds(100);
+
             Log.Logger.Debug($"Finished to initialize a {nameof(SwarmTest)} instance.");
         }
 
