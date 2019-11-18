@@ -2133,7 +2133,7 @@ namespace Libplanet.Tests.Net
         private Task StopAsync<T>(Swarm<T> swarm)
             where T : IAction, new()
         {
-            return swarm.StopAsync(TimeSpan.Zero);
+            return swarm.StopAsync(TimeSpan.FromSeconds(1));
         }
 
         private Task StopAsyncSwarms<T>(IEnumerable<Swarm<T>> swarms)
