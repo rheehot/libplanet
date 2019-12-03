@@ -526,10 +526,27 @@ namespace Libplanet.Blockchain
             long index = Store.CountIndex(Id);
             long difficulty = Policy.GetNextBlockDifficulty(this);
             HashDigest<SHA256>? prevHash = Store.IndexBlockHash(Id, index - 1);
-            IEnumerable<Transaction<T>> transactions = Store
+            List<Transaction<T>> transactions = Store
                 .IterateStagedTransactionIds()
                 .Select(Store.GetTransaction<T>)
-                .Where(tx => tx.Nonce < GetNextTxNonce(tx.Signer));
+                .ToList();
+
+            var validTransactions = transactions
+                .Where(tx => tx.Nonce < GetNextTxNonce(tx.Signer))
+                .ToList();
+
+            var invalidTransactions = transactions
+                .Where(tx => tx.Nonce >= GetNextTxNonce(tx.Signer))
+                .ToList();
+
+            if (invalidTransactions.Any())
+            {
+                _logger.Debug(
+                    "InvalidTransactions: {invalidTransactions}",
+                    string.Join(
+                        ", ",
+                        invalidTransactions.Select(tx => $"[{tx.Id}, nonce: {tx.Nonce}]")));
+            }
 
             CancellationTokenSource cts = new CancellationTokenSource();
             CancellationTokenSource cancellationTokenSource =
@@ -552,7 +569,7 @@ namespace Libplanet.Blockchain
                         miner: miner,
                         previousHash: prevHash,
                         timestamp: currentTime,
-                        transactions: transactions,
+                        transactions: validTransactions,
                         cancellationToken: cancellationTokenSource.Token),
                     cancellationTokenSource.Token
                 );
