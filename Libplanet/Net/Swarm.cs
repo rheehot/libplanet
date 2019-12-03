@@ -1369,7 +1369,7 @@ namespace Libplanet.Net
 
                 if (offset == -1)
                 {
-                    _logger.Warning("Received states from trusted peers.");
+                    _logger.Debug("Received states from trusted peers.");
                     return true;
                 }
             }
@@ -2047,7 +2047,7 @@ namespace Libplanet.Net
                          _store.GetBlockIndex(tgt) is long tgtIdx)
                             ? tgtIdx
                             : long.MaxValue;
-                    var highestIndex = lowestIndex + FindNextStatesChunkSize - 1 > targetIndex
+                    long highestIndex = lowestIndex + FindNextStatesChunkSize - 1 > targetIndex
                         ? targetIndex
                         : lowestIndex + FindNextStatesChunkSize - 1;
 
