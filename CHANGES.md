@@ -55,6 +55,8 @@ To be released.
     `Swarm<T>` became to call `preloadBlockDownloadFailed` event handler
     taken as an argument.  If the event handler is not present, `Swarm<T>`
     throws `SwarmException`.  [[#694]]
+ -  `Swarm<T>` became prints less logs during transfer its states on debug level.
+    [[#706]]
 
 ### Bug fixes
 
@@ -73,6 +75,7 @@ To be released.
 [#692]: https://github.com/planetarium/libplanet/pull/692
 [#694]: https://github.com/planetarium/libplanet/pull/694
 [#701]: https://github.com/planetarium/libplanet/pull/701
+[#706]: https://github.com/planetarium/libplanet/pull/706
 
 
 Version 0.7.0
