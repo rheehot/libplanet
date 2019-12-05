@@ -2260,7 +2260,7 @@ namespace Libplanet.Net
 
             using (var dealer = new DealerSocket(ToNetMQAddress(req.Peer)))
             {
-                dealer.Options.Linger = Timeout.InfiniteTimeSpan;
+                dealer.Options.Linger = TimeSpan.FromSeconds(60);
                 _logger.Debug(
                     "Trying to send {Message} to {Peer}...",
                     req.Message,
