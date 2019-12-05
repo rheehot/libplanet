@@ -36,9 +36,9 @@ To be released.
 
 ### Backward-incompatible network protocol changes
 
- -  Added long typed `offset` parameter to `RecentStates` and
+ -  Added `long`-typed `offset` parameter to `RecentStates` and
     `GetRecentStates` messages.  [[#703]]
- -  Added int typed `iteration` parameter to `RecentStates` message.
+ -  Added `int`-typed `iteration` parameter to `RecentStates` message.
     [[#703]]
 
 ### Backward-incompatible storage format changes
