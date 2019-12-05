@@ -202,7 +202,13 @@ namespace Libplanet.Tests.Net
                 await swarmA.AddPeersAsync(new[] { seed.AsPeer }, null);
                 await StopAsync(swarmA);
                 await seed.Protocol.RefreshTableAsync(TimeSpan.Zero, default(CancellationToken));
+
+                Assert.DoesNotContain(swarmA.AsPeer, seed.Peers);
+
                 await swarmB.AddPeersAsync(new[] { seed.AsPeer }, null);
+
+                // This is added for context switching.
+                await Task.Delay(100);
 
                 Assert.Contains(swarmB.AsPeer, seed.Peers);
                 Assert.Contains(seed.AsPeer, swarmB.Peers);
@@ -939,6 +945,10 @@ namespace Libplanet.Tests.Net
                 await StopAsync(swarmA);
                 await StopAsync(swarmB);
                 await StopAsync(swarmC);
+
+                swarmA.Dispose();
+                swarmB.Dispose();
+                swarmC.Dispose();
             }
         }
 
@@ -1316,9 +1326,17 @@ namespace Libplanet.Tests.Net
             BlockChain<DumbAction> minerChain = _blockchains[0];
             BlockChain<DumbAction> receiverChain = _blockchains[1];
 
-            foreach (int i in Enumerable.Range(0, 10))
+            var blocks = new List<Block<DumbAction>>();
+            blocks.Add(TestUtils.MineGenesis<DumbAction>());
+            foreach (int i in Enumerable.Range(0, 11))
             {
-                await minerChain.MineBlock(_fx1.Address1);
+                blocks.Add(TestUtils.MineNext(
+                    previousBlock: blocks[i],
+                    difficulty: 1024));
+                if (i != 10)
+                {
+                    minerChain.Append(blocks[i]);
+                }
             }
 
             var actualStates = new List<PreloadState>();
@@ -1330,7 +1348,7 @@ namespace Libplanet.Tests.Net
 
                     if (actualStates.Count == 8)
                     {
-                        minerChain.MineBlock(_fx1.Address1);
+                        minerChain.Append(blocks[10]);
                     }
                 }
             });
@@ -1343,6 +1361,9 @@ namespace Libplanet.Tests.Net
 
                 minerSwarm.FindNextHashesChunkSize = 2;
                 await receiverSwarm.PreloadAsync(TimeSpan.FromSeconds(15), progress);
+
+                // Await 1 second to make sure all progresses is reported.
+                await Task.Delay(1000);
 
                 Assert.Equal(minerChain.BlockHashes, receiverChain.BlockHashes);
 
@@ -1482,6 +1503,9 @@ namespace Libplanet.Tests.Net
                 await nominerSwarm1.PreloadAsync();
                 await receiverSwarm.AddPeersAsync(new[] { nominerSwarm1.AsPeer }, null);
                 await receiverSwarm.PreloadAsync(TimeSpan.FromSeconds(15), progress);
+
+                // Await 1 second to make sure all progresses is reported.
+                await Task.Delay(1000);
 
                 Assert.Equal(minerChain.BlockHashes, receiverChain.BlockHashes);
 
@@ -2161,6 +2185,9 @@ namespace Libplanet.Tests.Net
             {
                 await StopAsync(swarm1);
                 await StopAsync(swarm2);
+
+                fx1.Dispose();
+                fx2.Dispose();
 
                 swarm1.Dispose();
                 swarm2.Dispose();
