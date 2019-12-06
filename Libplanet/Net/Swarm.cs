@@ -41,8 +41,9 @@ namespace Libplanet.Net
         private static readonly TimeSpan TurnPermissionLifetime =
             TimeSpan.FromMinutes(5);
 
-        private static readonly TimeSpan BlockRecvTimeout = TimeSpan.FromSeconds(15);
-        private static readonly TimeSpan TxRecvTimeout = TimeSpan.FromSeconds(3);
+        private static readonly TimeSpan BlockRecvTimeout = TimeSpan.FromSeconds(150);
+        private static readonly TimeSpan TxRecvTimeout = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan BlockStateRecvTimeout = TimeSpan.FromSeconds(300);
         private readonly PrivateKey _privateKey;
         private readonly int _appProtocolVersion;
 
@@ -259,7 +260,7 @@ namespace Libplanet.Net
             }
         }
 
-        internal TimeSpan BlockHashRecvTimeout { get; set; } = TimeSpan.FromSeconds(3);
+        internal TimeSpan BlockHashRecvTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
         internal IEnumerable<BoundPeer> Peers => Protocol.Peers;
 
@@ -1244,6 +1245,8 @@ namespace Libplanet.Net
             long offset = 0;
             foreach ((BoundPeer peer, var blockHash) in trustedPeersWithTip)
             {
+                long topIndex = blockChain[blockHash].Index;
+                int count = 0, totalCount = 0;
                 while (!cancellationToken.IsCancellationRequested && offset != -1)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -1259,7 +1262,7 @@ namespace Libplanet.Net
                         reply = await (this as ISwarm).SendMessageWithReplyAsync(
                             peer,
                             request,
-                            timeout: TimeSpan.FromSeconds(30),
+                            timeout: BlockStateRecvTimeout,
                             cancellationToken: cancellationToken
                         );
 
@@ -1280,11 +1283,13 @@ namespace Libplanet.Net
 
                     if (reply is RecentStates recentStates && !recentStates.Missing)
                     {
+                        totalCount = recentStates.Iteration;
                         _logger.Debug(
                             "Received {StateRefCount} state refs and {BlockStateCount} block" +
                             " states.",
                             recentStates.StateReferences.Count,
                             recentStates.BlockStates.Count);
+                        count++;
 
                         ReaderWriterLockSlim rwlock = blockChain._rwlock;
                         rwlock.EnterWriteLock();
@@ -1292,7 +1297,6 @@ namespace Libplanet.Net
                         {
                             Guid chainId = blockChain.Id;
 
-                            int count = 0, totalCount = recentStates.StateReferences.Count;
                             _logger.Debug("Starts to store state refs received from {Peer}.", peer);
 
                             var d = new Dictionary<HashDigest<SHA256>, ISet<Address>>();
@@ -1311,7 +1315,6 @@ namespace Libplanet.Net
                                 }
                             }
 
-                            totalCount = d.Count;
                             foreach (KeyValuePair<HashDigest<SHA256>, ISet<Address>> pair in d)
                             {
                                 HashDigest<SHA256> hash = pair.Key;
@@ -1319,17 +1322,9 @@ namespace Libplanet.Net
                                 if (_store.GetBlockIndex(hash) is long index)
                                 {
                                     _store.StoreStateReference(chainId, addresses, hash, index);
-
-                                    progress?.Report(new StateReferenceDownloadState()
-                                    {
-                                        TotalStateReferenceCount = totalCount,
-                                        ReceivedStateReferenceCount = ++count,
-                                    });
                                 }
                             }
 
-                            count = 0;
-                            totalCount = recentStates.BlockStates.Count;
                             _logger.Debug(
                                 "Starts to store block states received from {Peer}.",
                                 peer);
@@ -1337,13 +1332,13 @@ namespace Libplanet.Net
                             {
                                 cancellationToken.ThrowIfCancellationRequested();
                                 _store.SetBlockStates(pair.Key, pair.Value);
-                                progress?.Report(new BlockStateDownloadState()
-                                {
-                                    TotalBlockStateCount = totalCount,
-                                    ReceivedBlockStateCount = ++count,
-                                    ReceivedBlockHash = pair.Key,
-                                });
                             }
+
+                            progress?.Report(new StateDownloadState()
+                            {
+                                TotalIterationCount = totalCount,
+                                ReceivedIterationCount = count,
+                            });
                         }
                         finally
                         {
@@ -2024,6 +2019,7 @@ namespace Libplanet.Net
             IImmutableDictionary<Address, IImmutableList<HashDigest<SHA256>>>
                 stateRefs = null;
             long nextOffset = -1;
+            int iteration = 0;
 
             if (BlockChain.ContainsBlock(target))
             {
@@ -2037,16 +2033,23 @@ namespace Libplanet.Net
                         "Getting state references from {Offset}",
                         getRecentStates.Offset);
 
-                    long lowestIndex =
+                    long baseIndex =
                         (@base is HashDigest<SHA256> bbh &&
                          _store.GetBlockIndex(bbh) is long bbIdx)
-                            ? bbIdx + getRecentStates.Offset
-                            : 0 + getRecentStates.Offset;
+                            ? bbIdx
+                            : 0;
+                    long lowestIndex = baseIndex + getRecentStates.Offset;
                     long targetIndex =
                         (target is HashDigest<SHA256> tgt &&
                          _store.GetBlockIndex(tgt) is long tgtIdx)
                             ? tgtIdx
                             : long.MaxValue;
+
+                    iteration =
+                        (int)Math.Ceiling(
+                            (double)(targetIndex - baseIndex + 1) / FindNextStatesChunkSize);
+                    _logger.Verbose("Iteration is : {Iteration}", iteration);
+
                     long highestIndex = lowestIndex + FindNextStatesChunkSize - 1 > targetIndex
                         ? targetIndex
                         : lowestIndex + FindNextStatesChunkSize - 1;
@@ -2060,6 +2063,10 @@ namespace Libplanet.Net
                         lowestIndex: lowestIndex,
                         highestIndex: highestIndex
                     );
+                    _logger.Verbose(
+                        "List state references from {From} to {To}.",
+                        lowestIndex,
+                        highestIndex);
 
                     // GetBlockStates may return null since swarm may not have deep states.
                     blockStates = stateRefs.Values
@@ -2110,7 +2117,7 @@ namespace Libplanet.Net
                 }
             }
 
-            var reply = new RecentStates(target, nextOffset, blockStates, stateRefs)
+            var reply = new RecentStates(target, nextOffset, iteration, blockStates, stateRefs)
             {
                 Identity = getRecentStates.Identity,
             };
@@ -2272,7 +2279,7 @@ namespace Libplanet.Net
 
             using (var dealer = new DealerSocket(ToNetMQAddress(req.Peer)))
             {
-                dealer.Options.Linger = Timeout.InfiniteTimeSpan;
+                dealer.Options.Linger = TimeSpan.FromSeconds(60);
                 _logger.Debug(
                     "Trying to send {Message} to {Peer}...",
                     req.Message,
