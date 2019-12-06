@@ -2239,6 +2239,11 @@ namespace Libplanet.Net
                 {
                     await ProcessRequest(req, cancellationToken);
                 }
+                catch (OperationCanceledException)
+                {
+                    _logger.Information("Cancellation requsted; shutdown runtime...");
+                    throw;
+                }
                 catch (Exception e)
                 {
                     if (req.Retryable)
