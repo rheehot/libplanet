@@ -563,9 +563,7 @@ namespace Libplanet.Net
 
         public void BroadcastTxs(IEnumerable<Transaction<T>> txs)
         {
-            _logger.Debug("Broadcast Txs.");
-            List<TxId> txIds = txs.Select(tx => tx.Id).ToList();
-            BroadcastTxIds(txIds);
+            BroadcastTxs(null, txs);
         }
 
         public string TraceTable()
@@ -1129,6 +1127,13 @@ namespace Libplanet.Net
             _logger.Debug("Block broadcasting complete.");
         }
 
+        private void BroadcastTxs(Address? excpet, IEnumerable<Transaction<T>> txs)
+        {
+            _logger.Debug("Broadcast Txs.");
+            List<TxId> txIds = txs.Select(tx => tx.Id).ToList();
+            BroadcastTxIds(excpet, txIds);
+        }
+
         private void BroadcastMessage(Address? except, Message message)
         {
             _broadcastQueue.Enqueue((except, message));
@@ -1453,7 +1458,7 @@ namespace Libplanet.Net
                                 _logger.Debug(
                                     "Broadcast Staged Transactions: [{txIds}]",
                                     string.Join(", ", txIds));
-                                BroadcastTxIds(txIds);
+                                BroadcastTxIds(null, txIds);
                             }
                         }, cancellationToken);
                 }
@@ -1472,10 +1477,10 @@ namespace Libplanet.Net
             }
         }
 
-        private void BroadcastTxIds(IEnumerable<TxId> txIds)
+        private void BroadcastTxIds(Address? except, IEnumerable<TxId> txIds)
         {
             var message = new TxIds(Address, txIds);
-            BroadcastMessage(null, message);
+            BroadcastMessage(except, message);
         }
 
         private async Task ProcessMessageAsync(
@@ -1954,7 +1959,7 @@ namespace Libplanet.Net
             TxReceived.Set();
             _logger.Debug("Txs staged successfully.");
 
-            BroadcastTxs(txs);
+            BroadcastTxs(message.Remote.Address, txs);
         }
 
         private void TransferBlocks(GetBlocks getData)
