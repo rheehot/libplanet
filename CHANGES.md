@@ -33,6 +33,11 @@ To be released.
  -  Removed `BlockStateDownloadState`.  [[#703]]
  -  Added `StateDownloadState` which reports state preloading iteration
     progress.  [[#703]]
+ -  Removed `StoreExtension` class.  [[#701], [#720]]
+ -  Added the `genesisBlock` parameter to
+    `BlockChain<T>()` constructor.  [[#688]]
+ -  Removed `StateReferenceDownloadState` class.  [[#703]]
+ -  Removed `BlockStateDownloadState` class.  [[#703]]
 
 ### Backward-incompatible network protocol changes
 
@@ -52,6 +57,12 @@ To be released.
 
  -  Added `DefaultStore` class to replace `LiteDBStore`.  [[#662]]
  -  Added `IStore.ListAllStateReferences<T>()` method.  [[#701], [#703]]
+ -  Added `BlockChain<T>.Genesis` property.  [[#688]]
+ -  Added `BlockChain<T>.MakeGenesisBlock()` static method.  [[#688]]
+ -  Added `InvalidGenesisBlockException` class.  [[#688]]
+ -  Added `StateDownloadState` class which reports state preloading iteration
+    progress.  [[#703]]
+ -  Added `IStore.LookupStateReference<T>()` method.  [[#720]]
 
 ### Behavioral changes
 
@@ -99,6 +110,7 @@ To be released.
 [#709]: https://github.com/planetarium/libplanet/pull/709
 [#718]: https://github.com/planetarium/libplanet/pull/718
 [#719]: https://github.com/planetarium/libplanet/pull/719
+[#720]: https://github.com/planetarium/libplanet/pull/720
 
 
 Version 0.7.0

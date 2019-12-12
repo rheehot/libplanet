@@ -189,6 +189,16 @@ namespace Libplanet.Tests.Store
             _store.SetBlockStates(blockHash, states);
         }
 
+        public Tuple<HashDigest<SHA256>, long> LookupStateReference<T>(
+            Guid chainId,
+            Address address,
+            Block<T> lookupUntil)
+            where T : IAction, new()
+        {
+            _logs.Add((nameof(LookupStateReference), chainId, address));
+            return _store.LookupStateReference(chainId, address, lookupUntil);
+        }
+
         public IEnumerable<Tuple<HashDigest<SHA256>, long>> IterateStateReferences(
             Guid chainId,
             Address address,
