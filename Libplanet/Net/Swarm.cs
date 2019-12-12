@@ -483,9 +483,11 @@ namespace Libplanet.Net
                         }
                         catch (TerminatingException)
                         {
+                            _logger.Error($"TerminatingException occurred in {nameof(_poller)}");
                         }
                         catch (ObjectDisposedException)
                         {
+                            _logger.Error($"ObjectDisposedException occurred in {nameof(_poller)}");
                         }
                     }));
                 _logger.Debug("Swarm started.");
