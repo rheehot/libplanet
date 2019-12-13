@@ -489,6 +489,13 @@ namespace Libplanet.Net
                         {
                             _logger.Error($"ObjectDisposedException occurred in {nameof(_poller)}");
                         }
+                        catch (Exception e)
+                        {
+                            _logger.Error(
+                                e,
+                                $"An unexpected exception occurred in {nameof(_poller)}; {e}"
+                            );
+                        }
                     }));
                 _logger.Debug("Swarm started.");
 
