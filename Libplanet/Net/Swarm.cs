@@ -1483,6 +1483,8 @@ namespace Libplanet.Net
                                 BroadcastTxIds(null, txIds);
                             }
                         }, cancellationToken);
+
+                    _logger.Debug($"Is Router Disposed: {_router.IsDisposed}");
                 }
                 catch (OperationCanceledException e)
                 {
