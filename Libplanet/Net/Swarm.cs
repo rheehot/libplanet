@@ -2425,7 +2425,10 @@ namespace Libplanet.Net
                     ep = await _turnClient.GetMappedAddressAsync();
                 }
 
-                await _turnClient.CreatePermissionAsync(ep);
+                if (ip.AddressFamily.Equals(AddressFamily.InterNetwork))
+                {
+                    await _turnClient.CreatePermissionAsync(ep);
+                }
             }
         }
 
