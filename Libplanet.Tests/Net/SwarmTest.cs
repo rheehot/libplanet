@@ -928,7 +928,7 @@ namespace Libplanet.Tests.Net
             }
         }
 
-        [Fact(Timeout = Timeout)]
+        [Fact(Skip = "Should subscribe event before broadcast.")]
         public async Task CanBroadcastBlock()
         {
             // If the bucket stored peers are the same, the block may not propagate,
