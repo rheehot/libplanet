@@ -42,7 +42,7 @@ namespace Libplanet.Net
             TimeSpan.FromMinutes(5);
 
         private static readonly TimeSpan MaxTimeout = TimeSpan.FromSeconds(150);
-        private static readonly TimeSpan BlockRecvTimeout = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan BlockRecvTimeout = TimeSpan.FromSeconds(15);
         private static readonly TimeSpan TxRecvTimeout = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan RecentStateRecvTimeout = TimeSpan.FromSeconds(150);
         private readonly PrivateKey _privateKey;
