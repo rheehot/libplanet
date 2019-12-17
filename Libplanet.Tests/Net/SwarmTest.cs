@@ -2371,6 +2371,7 @@ namespace Libplanet.Tests.Net
             var genesis = await chainA.MineBlock(_fx1.Address1);
             chainB.Append(genesis);
 
+            await chainA.MineBlock(_fx1.Address1);
             var block = await chainA.MineBlock(_fx1.Address1);
 
             try
