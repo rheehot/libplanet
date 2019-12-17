@@ -178,6 +178,11 @@ namespace Libplanet.Net
                             ProcessRuntime(_runtimeCancellationTokenSource.Token),
                             ProcessRuntime(_runtimeCancellationTokenSource.Token),
                             ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
                             ProcessRuntime(_runtimeCancellationTokenSource.Token)
                         );
                     }
