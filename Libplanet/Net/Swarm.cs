@@ -442,6 +442,10 @@ namespace Libplanet.Net
                 tasks.Add(RefreshAllocate(_cancellationToken));
                 tasks.Add(RefreshPermissions(_cancellationToken));
             }
+            else if (_host is null)
+            {
+                EndPoint = new DnsEndPoint(_publicIPAddress.ToString(), _listenPort.Value);
+            }
             else
             {
                 EndPoint = new DnsEndPoint(_host, _listenPort.Value);
