@@ -93,7 +93,19 @@ To be released.
  -  Fixed a bug where `BlockChain<T>.GetNextTxNonce()` had returned invalid tx
     nonce.  [[#718]]
  -  Fixed a bug where mined transactions were staged again.  [[#719]]
+ -  Fixed a bug where `Block<T>.Hash` property, `Block<T>.Mine()` method,
+    `Block<T>.FromBencodex()` method, `Block<T>.ToBencodex()` method,
+    `Transaction<T>.Id` property, `Transaction<T>.Signature` property,
+    `Transaction<T>.Create()` method, `Transaction<T>.FromBencodex()` method,
+    and `Transaction<T>.ToBencodex()` method had been non-deterministic on
+    some `CultureInfo.CurrentCulture` (e.g., `ar_SA`, `fr_FR`, `th_TH`)
+    so that it had caused network protocol incompatibilities.
+    [[#734]]
+ -  Fixed a bug where the states became empty between the tip of the peer to
+    receive the states and the tip of the downloaded block.  [[#736]]
 
+[#604]: https://github.com/planetarium/libplanet/issues/604
+[#613]: https://github.com/planetarium/libplanet/issues/613
 [#662]: https://github.com/planetarium/libplanet/pull/662
 [#665]: https://github.com/planetarium/libplanet/pull/665
 [#675]: https://github.com/planetarium/libplanet/pull/675
@@ -111,6 +123,13 @@ To be released.
 [#718]: https://github.com/planetarium/libplanet/pull/718
 [#719]: https://github.com/planetarium/libplanet/pull/719
 [#720]: https://github.com/planetarium/libplanet/pull/720
+[#721]: https://github.com/planetarium/libplanet/issues/721
+[#725]: https://github.com/planetarium/libplanet/pull/725
+[#726]: https://github.com/planetarium/libplanet/pull/726
+[#727]: https://github.com/planetarium/libplanet/pull/727
+[#728]: https://github.com/planetarium/libplanet/pull/728
+[#734]: https://github.com/planetarium/libplanet/pull/734
+[#736]: https://github.com/planetarium/libplanet/pull/736
 
 
 Version 0.7.0

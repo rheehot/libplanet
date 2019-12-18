@@ -1846,6 +1846,70 @@ namespace Libplanet.Tests.Net
             */
         }
 
+        [Fact]
+        public async Task PreloadWhilePeerTipIsChanging()
+        {
+            var key = new PrivateKey();
+            var address = key.PublicKey.ToAddress();
+
+            var policy = new NullPolicy<DumbAction>();
+
+            var fxMiner = new DefaultStoreFixture(memory: true);
+            var minerChain = new BlockChain<DumbAction>(policy, fxMiner.Store);
+            var minerAddress = fxMiner.Address1;
+
+            async Task MineBlocks()
+            {
+                for (var i = 0; i < 10; i++)
+                {
+                    var actions = new[] { new DumbAction(address, $"{i}") };
+                    minerChain.MakeTransaction(key, actions);
+
+                    await minerChain.MineBlock(minerAddress);
+                }
+            }
+
+            await MineBlocks();
+
+            var fxReceiver = new DefaultStoreFixture(memory: true);
+            var receiverChain = new BlockChain<DumbAction>(policy, fxReceiver.Store);
+
+            var minerSwarm = CreateSwarm(minerChain);
+            var receiverSwarm = CreateSwarm(receiverChain);
+
+            try
+            {
+                await StartAsync(minerSwarm);
+                await receiverSwarm.AddPeersAsync(new[] { minerSwarm.AsPeer }, null);
+                var trustedStateValidators = new[] { minerSwarm.Address }.ToImmutableHashSet();
+
+                var t = MineBlocks();
+                await receiverSwarm.PreloadAsync(trustedStateValidators: trustedStateValidators);
+
+                await t;
+
+                var minerStateRefs = minerChain.Store
+                    .ListAllStateReferences(minerChain.Id, 0, receiverChain.Count)
+                    .FirstOrDefault().Value;
+
+                var receiverStateRefs = receiverChain.Store
+                    .ListAllStateReferences(receiverChain.Id, 0, receiverChain.Count)
+                    .FirstOrDefault().Value;
+
+                Assert.Equal(receiverChain.Count, receiverStateRefs.Count);
+                Assert.Equal(minerStateRefs, receiverStateRefs);
+            }
+            finally
+            {
+                await StopAsync(minerSwarm);
+                await StopAsync(receiverSwarm);
+                minerSwarm.Dispose();
+                receiverSwarm.Dispose();
+                fxMiner.Dispose();
+                fxReceiver.Dispose();
+            }
+        }
+
         [Fact(Timeout = Timeout)]
         public async Task PreloadSparseStateWithTrustedPeers()
         {
