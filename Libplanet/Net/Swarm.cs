@@ -64,6 +64,7 @@ namespace Libplanet.Net
         private TaskCompletionSource<object> _runningEvent;
         private int? _listenPort;
         private TurnClient _turnClient;
+        private bool _behindNAT;
         private CancellationTokenSource _workerCancellationTokenSource;
         private CancellationTokenSource _runtimeCancellationTokenSource;
         private CancellationToken _cancellationToken;
@@ -419,7 +420,6 @@ namespace Libplanet.Net
                 ).Token;
             _cancellationToken = workerCancellationToken;
             var tasks = new List<Task>();
-            var behindNAT = false;
 
             if (!(_turnClient is null))
             {
@@ -427,11 +427,11 @@ namespace Libplanet.Net
 
                 if (await _turnClient.IsBehindNAT())
                 {
-                    behindNAT = true;
+                    _behindNAT = true;
                 }
             }
 
-            if (behindNAT)
+            if (_behindNAT)
             {
                 IPEndPoint turnEp = await _turnClient.AllocateRequestAsync(
                     TurnAllocationLifetime
@@ -916,7 +916,7 @@ namespace Libplanet.Net
             CancellationToken cancellationToken = default(CancellationToken)
         )
         {
-            if (!(_turnClient is null))
+            if (_behindNAT)
             {
                 await CreatePermission(peer);
             }
