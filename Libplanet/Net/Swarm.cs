@@ -3,7 +3,6 @@ using System.Collections.Async;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -167,34 +166,40 @@ namespace Libplanet.Net
 
             _requests = new AsyncCollection<MessageRequest>();
             _runtimeCancellationTokenSource = new CancellationTokenSource();
-            _runtimeProcessor = Task.Run(() =>
-            {
-                // Ignore NetMQ related exceptions during NetMQRuntime.Dispose() to stabilize tests
-                try
+            _runtimeProcessor = Task.Factory.StartNew(
+                () =>
                 {
-                    using (var runtime = new NetMQRuntime())
+                    // Ignore NetMQ related exceptions during NetMQRuntime.Dispose() to stabilize
+                    // tests
+                    try
                     {
-                        runtime.Run(
-                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
-                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
-                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
-                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
-                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
-                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
-                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
-                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
-                            ProcessRuntime(_runtimeCancellationTokenSource.Token),
-                            ProcessRuntime(_runtimeCancellationTokenSource.Token)
-                        );
+                        using (var runtime = new NetMQRuntime())
+                        {
+                            runtime.Run(
+                                ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                                ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                                ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                                ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                                ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                                ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                                ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                                ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                                ProcessRuntime(_runtimeCancellationTokenSource.Token),
+                                ProcessRuntime(_runtimeCancellationTokenSource.Token)
+                            );
+                        }
                     }
-                }
-                catch (NetMQException)
-                {
-                }
-                catch (ObjectDisposedException)
-                {
-                }
-            });
+                    catch (NetMQException)
+                    {
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                    }
+                },
+                CancellationToken.None,
+                TaskCreationOptions.DenyChildAttach | TaskCreationOptions.LongRunning,
+                TaskScheduler.Default
+            );
         }
 
         ~Swarm()
@@ -438,6 +443,9 @@ namespace Libplanet.Net
                 );
                 EndPoint = new DnsEndPoint(turnEp.Address.ToString(), turnEp.Port);
 
+                // FIXME should be parameterized
+                tasks.Add(BindingProxies(_cancellationToken));
+                tasks.Add(BindingProxies(_cancellationToken));
                 tasks.Add(BindingProxies(_cancellationToken));
                 tasks.Add(RefreshAllocate(_cancellationToken));
                 tasks.Add(RefreshPermissions(_cancellationToken));
@@ -481,31 +489,7 @@ namespace Libplanet.Net
                         TimeSpan.FromSeconds(10),
                         _cancellationToken));
                 tasks.Add(RebuildConnectionAsync(TimeSpan.FromMinutes(30), _cancellationToken));
-                tasks.Add(
-                    Task.Run(() =>
-                    {
-                        // Ignore NetMQ related exceptions during NetMQPoller.Run() to stabilize
-                        // tests.
-                        try
-                        {
-                            _poller.Run();
-                        }
-                        catch (TerminatingException)
-                        {
-                            _logger.Error($"TerminatingException occurred in {nameof(_poller)}");
-                        }
-                        catch (ObjectDisposedException)
-                        {
-                            _logger.Error($"ObjectDisposedException occurred in {nameof(_poller)}");
-                        }
-                        catch (Exception e)
-                        {
-                            _logger.Error(
-                                e,
-                                $"An unexpected exception occurred in {nameof(_poller)}; {e}"
-                            );
-                        }
-                    }));
+                _poller.RunAsync();
                 _logger.Debug("Swarm started.");
 
                 await await Task.WhenAny(tasks);
@@ -1165,7 +1149,6 @@ namespace Libplanet.Net
                     {
                         using (var proxy = new NetworkStreamProxy(stream))
                         {
-                            Debug.Assert(_listenPort != null, nameof(_listenPort) + " != null");
                             await proxy.StartAsync(IPAddress.Loopback, _listenPort.Value);
                         }
                     }).ContinueWith(_ => stream.Dispose());
