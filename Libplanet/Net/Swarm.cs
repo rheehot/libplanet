@@ -272,9 +272,9 @@ namespace Libplanet.Net
             }
         }
 
-        internal TimeSpan BlockHashRecvTimeout { get; set; } = TimeSpan.FromSeconds(30);
+        public IEnumerable<BoundPeer> Peers => Protocol.Peers;
 
-        internal IEnumerable<BoundPeer> Peers => Protocol.Peers;
+        internal TimeSpan BlockHashRecvTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
         internal IProtocol Protocol { get; private set; }
 
