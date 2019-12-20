@@ -681,9 +681,18 @@ namespace Libplanet.Net
             // all or nothing (i.e., atomic), we first fork the chain and stack up preloaded data
             // upon that forked workspace, and then if preloading ends replace the existing
             // blockchain with it.
-            BlockChain<T> workspace = initialTip is Block<T> tip
-                ? BlockChain.Fork(tip.Hash)
-                : new BlockChain<T>(BlockChain.Policy, _store, Guid.NewGuid());
+            BlockChain<T> workspace = BlockChain;
+
+            var store = (DefaultStore)BlockChain.Store;
+
+            try
+            {
+                store.Backup();
+            }
+            catch (Exception e)
+            {
+                _logger.Error($"Unexpected occurred during store.Backup(): {e}");
+            }
 
             var complete = false;
 
@@ -807,7 +816,15 @@ namespace Libplanet.Net
                         BlockChain.Id,
                         BlockChain.Tip
                     );
-                    _store.DeleteChainId(workspace.Id);
+
+                    try
+                    {
+                        store.Restore();
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.Error($"Unexpected occurred during store.Restore(): {e}");
+                    }
                 }
                 else
                 {
@@ -819,7 +836,15 @@ namespace Libplanet.Net
                         workspace.Id,
                         workspace.Tip
                     );
-                    BlockChain.Swap(workspace, render: false);
+
+                    try
+                    {
+                        store.DeleteBackup();
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.Error($"Unexpected occurred during store.DeleteBackup(): {e}");
+                    }
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();

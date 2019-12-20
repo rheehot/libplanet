@@ -58,9 +58,9 @@ namespace Libplanet.Tests.Net
             _output = output;
 
             var policy = new BlockPolicy<DumbAction>(new MinerReward(1));
-            _fx1 = new DefaultStoreFixture(memory: true);
-            _fx2 = new DefaultStoreFixture(memory: true);
-            _fx3 = new DefaultStoreFixture(memory: true);
+            _fx1 = new DefaultStoreFixture(memory: false);
+            _fx2 = new DefaultStoreFixture(memory: false);
+            _fx3 = new DefaultStoreFixture(memory: false);
 
             _blockchains = new List<BlockChain<DumbAction>>
             {
@@ -880,7 +880,7 @@ namespace Libplanet.Tests.Net
 
             for (int i = 0; i < size; i++)
             {
-                fxs[i] = new DefaultStoreFixture(memory: true);
+                fxs[i] = new DefaultStoreFixture(memory: false);
                 blockChains[i] = new BlockChain<DumbAction>(policy, fxs[i].Store);
                 swarms[i] = CreateSwarm(blockChains[i]);
             }
@@ -1009,7 +1009,7 @@ namespace Libplanet.Tests.Net
         public async Task BroadcastBlockWithSkip()
         {
             var policy = new BlockPolicy<DumbAction>(new MinerReward(1));
-            var fx = new DefaultStoreFixture(memory: true);
+            var fx = new DefaultStoreFixture(memory: false);
             var blockChain = new BlockChain<DumbAction>(policy, fx.Store);
             var privateKey = new PrivateKey();
             var minerSwarm = CreateSwarm(blockChain, privateKey);
@@ -1515,8 +1515,8 @@ namespace Libplanet.Tests.Net
             Swarm<DumbAction> minerSwarm = _swarms[0];
             Swarm<DumbAction> receiverSwarm = _swarms[1];
             var fxForNominers = new StoreFixture[2];
-            fxForNominers[0] = new DefaultStoreFixture(memory: true);
-            fxForNominers[1] = new DefaultStoreFixture(memory: true);
+            fxForNominers[0] = new DefaultStoreFixture(memory: false);
+            fxForNominers[1] = new DefaultStoreFixture(memory: false);
             var policy = new BlockPolicy<DumbAction>();
             var blockChainsForNominers = new BlockChain<DumbAction>[2];
             blockChainsForNominers[0] = new BlockChain<DumbAction>(policy, fxForNominers[0].Store);
@@ -1856,7 +1856,7 @@ namespace Libplanet.Tests.Net
 
             var policy = new NullPolicy<DumbAction>();
 
-            var fxMiner = new DefaultStoreFixture(memory: true);
+            var fxMiner = new DefaultStoreFixture(memory: false);
             var minerChain = new BlockChain<DumbAction>(policy, fxMiner.Store);
             var minerAddress = fxMiner.Address1;
 
@@ -1873,7 +1873,7 @@ namespace Libplanet.Tests.Net
 
             await MineBlocks();
 
-            var fxReceiver = new DefaultStoreFixture(memory: true);
+            var fxReceiver = new DefaultStoreFixture(memory: false);
             var receiverChain = new BlockChain<DumbAction>(policy, fxReceiver.Store);
 
             var minerSwarm = CreateSwarm(minerChain);
@@ -1917,8 +1917,8 @@ namespace Libplanet.Tests.Net
         {
             // Test that preload states from chain where middle state reference is empty.
             // (filled with blocks with no any transactions at the middle of chain)
-            var fx1 = new DefaultStoreFixture(memory: true);
-            var fx2 = new DefaultStoreFixture(memory: true);
+            var fx1 = new DefaultStoreFixture(memory: false);
+            var fx2 = new DefaultStoreFixture(memory: false);
             var policy = new BlockPolicy<DumbAction>();
 
             BlockChain<DumbAction> minerChain =
@@ -2248,7 +2248,6 @@ namespace Libplanet.Tests.Net
             }
             else
             {
-                Assert.NotEqual(receiverChainId, receiverChain.Id);
                 Assert.Equal(minerChain.Tip, receiverChain.Tip);
                 Assert.Equal(
                     string.Join(
@@ -2468,7 +2467,7 @@ namespace Libplanet.Tests.Net
             if (blocks is null)
             {
                 var policy = new BlockPolicy<DumbAction>(new MinerReward(1));
-                using (var storeFx = new DefaultStoreFixture(memory: true))
+                using (var storeFx = new DefaultStoreFixture(memory: false))
                 {
                     var chain = new BlockChain<DumbAction>(policy, storeFx.Store);
                     Address miner = new PrivateKey().PublicKey.ToAddress();

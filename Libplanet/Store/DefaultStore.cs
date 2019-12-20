@@ -52,8 +52,10 @@ namespace Libplanet.Store
 
         private readonly MemoryStream _memoryStream;
 
-        private readonly LiteDatabase _db;
+        private readonly ConnectionString _connectionString;
         private readonly Codec _codec;
+
+        private LiteDatabase _db;
 
         /// <summary>
         /// Creates a new <seealso cref="DefaultStore"/>.
@@ -124,7 +126,8 @@ namespace Libplanet.Store
                     connectionString.Mode = FileMode.Exclusive;
                 }
 
-                _db = new LiteDatabase(connectionString);
+                _connectionString = connectionString;
+                _db = new LiteDatabase(_connectionString);
             }
 
             lock (_db.Mapper)
@@ -158,6 +161,97 @@ namespace Libplanet.Store
 
         private LiteCollection<StagedTxIdDoc> StagedTxIds =>
             _db.GetCollection<StagedTxIdDoc>("staged_txids");
+
+        public void Backup()
+        {
+            if (_connectionString is null)
+            {
+                return;
+            }
+
+            var filename = _connectionString.Filename;
+            var tmpFilename = filename + "_tmp";
+
+            if (File.Exists(tmpFilename))
+            {
+                File.Delete(tmpFilename);
+            }
+
+            _db.Dispose();
+
+            File.Copy(filename, tmpFilename);
+
+            _db = new LiteDatabase(_connectionString);
+
+            lock (_db.Mapper)
+            {
+                _db.Mapper.RegisterType(
+                    hash => hash.ToByteArray(),
+                    b => new HashDigest<SHA256>(b));
+                _db.Mapper.RegisterType(
+                    txid => txid.ToByteArray(),
+                    b => new TxId(b));
+                _db.Mapper.RegisterType(
+                    address => address.ToByteArray(),
+                    b => new Address(b.AsBinary));
+            }
+        }
+
+        public void DeleteBackup()
+        {
+            if (_connectionString is null)
+            {
+                return;
+            }
+
+            var filename = _connectionString.Filename;
+            var tmpFilename = filename + "_tmp";
+
+            if (File.Exists(tmpFilename))
+            {
+                File.Delete(tmpFilename);
+            }
+        }
+
+        public void Restore()
+        {
+            if (_connectionString is null)
+            {
+                return;
+            }
+
+            var filename = _connectionString.Filename;
+            var tmpFilename = filename + "_tmp";
+
+            if (!File.Exists(tmpFilename))
+            {
+                return;
+            }
+
+            _db.Dispose();
+
+            if (File.Exists(filename))
+            {
+                File.Delete(filename);
+            }
+
+            File.Move(tmpFilename, filename);
+
+            _db = new LiteDatabase(_connectionString);
+
+            lock (_db.Mapper)
+            {
+                _db.Mapper.RegisterType(
+                    hash => hash.ToByteArray(),
+                    b => new HashDigest<SHA256>(b));
+                _db.Mapper.RegisterType(
+                    txid => txid.ToByteArray(),
+                    b => new TxId(b));
+                _db.Mapper.RegisterType(
+                    address => address.ToByteArray(),
+                    b => new Address(b.AsBinary));
+            }
+        }
 
         /// <inheritdoc/>
         public override IEnumerable<Guid> ListChainIds()

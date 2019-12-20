@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Menees.Analyzers.Settings>
   <MaxLineColumns>100</MaxLineColumns>
-  <MaxMethodLines>200</MaxMethodLines>
+  <MaxMethodLines>210</MaxMethodLines>
   <MaxFileLines>2700</MaxFileLines>
 </Menees.Analyzers.Settings>
