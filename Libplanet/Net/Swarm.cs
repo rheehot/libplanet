@@ -687,7 +687,7 @@ namespace Libplanet.Net
 
             try
             {
-                store.Backup();
+                store.ChangeToWorkspace();
             }
             catch (Exception e)
             {
@@ -839,7 +839,7 @@ namespace Libplanet.Net
 
                     try
                     {
-                        store.DeleteBackup();
+                        store.SwapWorkspace();
                     }
                     catch (Exception e)
                     {

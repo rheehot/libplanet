@@ -53,6 +53,7 @@ namespace Libplanet.Store
         private readonly MemoryStream _memoryStream;
 
         private readonly ConnectionString _connectionString;
+        private readonly string _indexFilename;
         private readonly Codec _codec;
 
         private LiteDatabase _db;
@@ -115,6 +116,8 @@ namespace Libplanet.Store
                     Flush = flush,
                 };
 
+                _indexFilename = connectionString.Filename;
+
                 if (readOnly)
                 {
                     connectionString.Mode = FileMode.ReadOnly;
@@ -162,14 +165,14 @@ namespace Libplanet.Store
         private LiteCollection<StagedTxIdDoc> StagedTxIds =>
             _db.GetCollection<StagedTxIdDoc>("staged_txids");
 
-        public void Backup()
+        public void ChangeToWorkspace()
         {
             if (_connectionString is null)
             {
                 return;
             }
 
-            var filename = _connectionString.Filename;
+            var filename = _indexFilename;
             var tmpFilename = filename + "_tmp";
 
             if (File.Exists(tmpFilename))
@@ -181,6 +184,8 @@ namespace Libplanet.Store
 
             File.Copy(filename, tmpFilename);
 
+            _connectionString.Filename = tmpFilename;
+
             _db = new LiteDatabase(_connectionString);
 
             lock (_db.Mapper)
@@ -197,36 +202,15 @@ namespace Libplanet.Store
             }
         }
 
-        public void DeleteBackup()
+        public void SwapWorkspace()
         {
             if (_connectionString is null)
             {
                 return;
             }
 
-            var filename = _connectionString.Filename;
+            var filename = _indexFilename;
             var tmpFilename = filename + "_tmp";
-
-            if (File.Exists(tmpFilename))
-            {
-                File.Delete(tmpFilename);
-            }
-        }
-
-        public void Restore()
-        {
-            if (_connectionString is null)
-            {
-                return;
-            }
-
-            var filename = _connectionString.Filename;
-            var tmpFilename = filename + "_tmp";
-
-            if (!File.Exists(tmpFilename))
-            {
-                return;
-            }
 
             _db.Dispose();
 
@@ -237,6 +221,7 @@ namespace Libplanet.Store
 
             File.Move(tmpFilename, filename);
 
+            _connectionString.Filename = filename;
             _db = new LiteDatabase(_connectionString);
 
             lock (_db.Mapper)
@@ -250,6 +235,42 @@ namespace Libplanet.Store
                 _db.Mapper.RegisterType(
                     address => address.ToByteArray(),
                     b => new Address(b.AsBinary));
+            }
+        }
+
+        public void Restore()
+        {
+            if (_connectionString is null)
+            {
+                return;
+            }
+
+            var filename = _indexFilename;
+
+            _db.Dispose();
+
+            _connectionString.Filename = filename;
+
+            _db = new LiteDatabase(_connectionString);
+
+            lock (_db.Mapper)
+            {
+                _db.Mapper.RegisterType(
+                    hash => hash.ToByteArray(),
+                    b => new HashDigest<SHA256>(b));
+                _db.Mapper.RegisterType(
+                    txid => txid.ToByteArray(),
+                    b => new TxId(b));
+                _db.Mapper.RegisterType(
+                    address => address.ToByteArray(),
+                    b => new Address(b.AsBinary));
+            }
+
+            var tmpFilename = filename + "_tmp";
+
+            if (!File.Exists(tmpFilename))
+            {
+                File.Delete(tmpFilename);
             }
         }
 
