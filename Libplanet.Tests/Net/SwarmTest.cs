@@ -383,6 +383,8 @@ namespace Libplanet.Tests.Net
 
                 await BootstrapAsync(swarmA, swarmB.AsPeer);
 
+                await Task.Delay(15000);
+
                 Assert.Contains(swarmB.AsPeer, swarmA.Peers);
                 Assert.Empty(swarmB.Peers);
 
