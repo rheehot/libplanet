@@ -1,6 +1,4 @@
-<Project
-  xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-  Sdk="Microsoft.NET.Sdk">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>Libplanet</PackageId>
     <Title>Libplanet</Title>
@@ -47,8 +45,7 @@ https://docs.libplanet.io/</Description>
     <CodeAnalysisRuleSet>..\Libplanet.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(MSBuildRuntimeType)'!='Mono' And
-                             '$(MSBuildVersion)'&gt;='16.3.0'">
+  <PropertyGroup Condition=" '$(MSBuildRuntimeType)'!='Mono' And&#xA;                             '$(MSBuildVersion)'&gt;='16.3.0'">
     <TargetFrameworks>netstandard2.0;netcoreapp3.0</TargetFrameworks>
   </PropertyGroup>
 
@@ -64,6 +61,7 @@ https://docs.libplanet.io/</Description>
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Secp256k1.Net" Version="0.1.54" />
     <PackageReference Include="AsyncEnumerator" Version="2.2.2" />
     <PackageReference Include="Bencodex" Version="0.2.0" />
     <PackageReference Include="BouncyCastle.NetCore" Version="1.8.3" />
@@ -76,9 +74,7 @@ https://docs.libplanet.io/</Description>
     <PackageReference Include="Menees.Analyzers.2017" Version="2.0.3">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference
-      Include="Microsoft.DotNet.Analyzers.Compatibility"
-      Version="0.2.12-alpha">
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>
         runtime; build; native; contentfiles; analyzers; buildtransitive
@@ -106,9 +102,7 @@ https://docs.libplanet.io/</Description>
   <!-- The above hacky trick is borrowed from the following Stack Overflow
   answer: https://stackoverflow.com/a/45004898/383405 (see #2). -->
   <ItemGroup>
-    <ProjectReference
-      Include="..\Libplanet.Stun\Libplanet.Stun.csproj"
-      PrivateAssets="All" />
+    <ProjectReference Include="..\Libplanet.Stun\Libplanet.Stun.csproj" PrivateAssets="All" />
   </ItemGroup>
 
   <PropertyGroup>

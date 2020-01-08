@@ -12,6 +12,7 @@ using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.Security;
+using Serilog;
 
 namespace Libplanet.Crypto
 {
@@ -175,7 +176,14 @@ namespace Libplanet.Crypto
             seq.AddObject(new DerInteger(r));
             seq.AddObject(new DerInteger(s));
             seq.Close();
-            return bos.ToArray();
+            var bosArray = bos.ToArray();
+
+            if (r.ToByteArray().Length < 32 || s.ToByteArray().Length < 32)
+            {
+                Log.Debug($"bosArray Length is {bosArray.Length}");
+            }
+
+            return bosArray;
         }
 
         /// <summary>

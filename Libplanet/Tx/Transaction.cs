@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
@@ -11,6 +12,7 @@ using Bencodex.Types;
 using Libplanet.Action;
 using Libplanet.Crypto;
 using Libplanet.Serialization;
+using Serilog;
 
 namespace Libplanet.Tx
 {
@@ -431,7 +433,9 @@ namespace Libplanet.Tx
                 }
             }
 
+            var sw = Stopwatch.StartNew();
             byte[] sig = privateKey.Sign(payload);
+            Log.Debug($"privateKey.Sign: {sw.Elapsed}");
             return new Transaction<T>(
                 nonce,
                 signer,
@@ -606,7 +610,10 @@ namespace Libplanet.Tx
         /// <see cref="Transaction{T}.PublicKey"/>.</exception>
         public void Validate()
         {
-            if (!PublicKey.Verify(ToBencodex(false), Signature))
+            var sw = Stopwatch.StartNew();
+            bool isValidSignature = PublicKey.Verify(ToBencodex(false), Signature);
+            Log.Debug($"PublicKey.Verify: {sw.Elapsed}");
+            if (!isValidSignature)
             {
                 string message =
                     $"The signature ({ByteUtil.Hex(Signature)}) is failed " +

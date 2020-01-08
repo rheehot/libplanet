@@ -1,8 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
-using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Security;
+using Serilog;
 
 namespace Libplanet.Crypto
 {
@@ -52,6 +53,8 @@ namespace Libplanet.Crypto
         }
 
         internal ECPublicKeyParameters KeyParam { get; }
+
+        internal byte[] ByteArray { get; set; }
 
         /// <summary>
         /// Encodes this public key into a <see cref="byte"/> array
@@ -140,11 +143,28 @@ namespace Libplanet.Crypto
                 throw new ArgumentNullException(nameof(signature));
             }
 
-            ISigner verifier = SignerUtilities.GetSigner(algorithm);
-            verifier.Init(false, KeyParam);
-            verifier.BlockUpdate(message, 0, message.Length);
+            var sw = Stopwatch.StartNew();
 
-            return verifier.VerifySignature(signature);
+            sw.Restart();
+            var h = new Sha256Digest();
+            var hashed = new byte[h.GetDigestSize()];
+            h.BlockUpdate(message, 0, message.Length);
+            h.DoFinal(hashed, 0);
+            h.Reset();
+
+            Log.Debug($"Hashed: {sw.Elapsed}");
+
+            var secp256K1Signature = new byte[64];
+            Secp256K1.Instance.SignatureParseDer(secp256K1Signature, signature);
+
+            var pubKeyBytes = new byte[64];
+            Secp256K1.Instance.PublicKeyParse(pubKeyBytes, Format(false));
+
+            sw.Restart();
+            var result = Secp256K1.Instance.Verify(secp256K1Signature, hashed, pubKeyBytes);
+            Log.Debug($"Result: {result}, secp256k1 VerifySignature: {sw.Elapsed}");
+
+            return result;
         }
     }
 }
