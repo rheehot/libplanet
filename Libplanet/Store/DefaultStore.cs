@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Bencodex;
 using Bencodex.Types;
+using FASTER.core;
 using Libplanet.Blocks;
 using Libplanet.Tx;
 using LiteDB;
@@ -56,6 +57,13 @@ namespace Libplanet.Store
 
         private readonly LiteDatabase _db;
         private readonly Codec _codec;
+        private readonly ClientSession<
+            Types.StoreKey,
+            Types.StoreValue,
+            Types.StoreInput,
+            Types.StoreOutput,
+            Types.StoreContext,
+            Types.StoreFunctions> _session;
 
         /// <summary>
         /// Creates a new <seealso cref="DefaultStore"/>.
@@ -129,6 +137,8 @@ namespace Libplanet.Store
                 }
 
                 _db = new LiteDatabase(connectionString);
+                DefaultStoreDb = new StoreDb(path);
+                _session = DefaultStoreDb?.Db?.NewSession();
             }
 
             lock (_db.Mapper)
@@ -162,6 +172,17 @@ namespace Libplanet.Store
 
             _codec = new Codec();
         }
+
+        public StoreDb DefaultStoreDb { get; }
+
+        public ClientSession<
+            Types.StoreKey,
+            Types.StoreValue,
+            Types.StoreInput,
+            Types.StoreOutput,
+            Types.StoreContext,
+            Types.StoreFunctions> Session =>
+            _session;
 
         private LiteCollection<StagedTxIdDoc> StagedTxIds =>
             _db.GetCollection<StagedTxIdDoc>("staged_txids");
@@ -372,23 +393,15 @@ namespace Libplanet.Store
                 return (Transaction<T>)cachedTx;
             }
 
-            UPath path = TxPath(txid);
-            if (!_txs.FileExists(path))
-            {
-                return null;
-            }
+            var key = new Types.StoreKey();
+            key.TableType = "T";
+            key.Key = txid.ToByteArray();
+            Types.StoreInput input = new Types.StoreInput();
+            Types.StoreOutput output = new Types.StoreOutput();
+            Types.StoreContext context1 = new Types.StoreContext();
 
-            byte[] bytes;
-            try
-            {
-                bytes = _txs.ReadAllBytes(path);
-            }
-            catch (FileNotFoundException)
-            {
-                return null;
-            }
-
-            Transaction<T> tx = Transaction<T>.Deserialize(bytes);
+            _session.Read(ref key, ref input, ref output, context1, 1);
+            var tx = Transaction<T>.Deserialize(output.Value.Value);
             _txCache.AddOrUpdate(txid, tx);
             return tx;
         }
@@ -401,7 +414,22 @@ namespace Libplanet.Store
                 return;
             }
 
-            WriteContentAddressableFile(_txs, TxPath(tx.Id), tx.Serialize(true));
+            var key = new Types.StoreKey();
+            key.TableType = "T";
+            key.Key = tx.Id.ToByteArray();
+            var value = new Types.StoreValue();
+            value.Value = tx.Serialize(true);
+
+            Types.StoreContext context1 = new Types.StoreContext();
+
+            _session.Upsert(ref key, ref value, context1, long.MaxValue);
+            DefaultStoreDb.Checkpoint();
+
+            Types.StoreInput input = new Types.StoreInput();
+            Types.StoreOutput output = new Types.StoreOutput();
+
+            _session.Read(ref key, ref input, ref output, context1, 1);
+
             _txCache.AddOrUpdate(tx.Id, tx);
         }
 
@@ -826,6 +854,8 @@ namespace Libplanet.Store
             _db?.Dispose();
             _memoryStream?.Dispose();
             _root.Dispose();
+            _session?.Dispose();
+            DefaultStoreDb?.Dispose();
         }
 
         internal static Guid ParseChainId(string chainIdString) =>
