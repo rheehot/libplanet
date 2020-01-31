@@ -163,6 +163,11 @@ namespace Libplanet.Store
             _codec = new Codec();
         }
 
+        protected DefaultStore()
+        {
+            throw new NotSupportedException();
+        }
+
         private LiteCollection<StagedTxIdDoc> StagedTxIds =>
             _db.GetCollection<StagedTxIdDoc>("staged_txids");
 
