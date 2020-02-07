@@ -661,8 +661,8 @@ namespace Libplanet.Store
             long? lowestIndex,
             int? limit)
         {
-            highestIndex = highestIndex ?? long.MaxValue;
-            lowestIndex = lowestIndex ?? 0;
+            highestIndex ??= long.MaxValue;
+            lowestIndex ??= 0;
 
             if (highestIndex < lowestIndex)
             {

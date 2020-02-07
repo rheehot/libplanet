@@ -409,7 +409,7 @@ namespace Libplanet.Net
             CancellationToken cancellationToken = default(CancellationToken)
         )
         {
-            trustedStateValidators = trustedStateValidators ?? ImmutableHashSet<Address>.Empty;
+            trustedStateValidators ??= ImmutableHashSet<Address>.Empty;
 
             Block<T> initialTip = BlockChain.Tip;
             BlockLocator initialLocator = BlockChain.GetBlockLocator();
@@ -2064,8 +2064,8 @@ namespace Libplanet.Net
                             : 0;
                     long lowestIndex = baseIndex + getRecentStates.Offset;
                     long targetIndex =
-                        (target is HashDigest<SHA256> tgt &&
-                         _store.GetBlockIndex(tgt) is long tgtIdx)
+                        (target is { } tgt &&
+                         _store.GetBlockIndex(tgt) is { } tgtIdx)
                             ? tgtIdx
                             : long.MaxValue;
 

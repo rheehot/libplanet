@@ -69,7 +69,7 @@ jobs:
     displayName: Stick with .NET Core SDK version compatible to Mono toolchain
     inputs:
       packageType: sdk
-      version: 2.2.301  # See also: https://github.com/mono/mono/issues/13537
+      version: 3.0.102  # See also: https://github.com/mono/mono/issues/13537
       installationPath: $(Agent.ToolsDirectory)/dotnet
   - template: .azure-pipelines/mono.yml
     parameters:
@@ -81,6 +81,12 @@ jobs:
   pool:
     vmImage: macOS-10.14
   steps:
+  - task: UseDotNet@2
+    displayName: Stick with .NET Core SDK version compatible to Mono toolchain
+    inputs:
+      packageType: sdk
+      version: 3.0.102  # See also: https://github.com/mono/mono/issues/13537
+      installationPath: $(Agent.ToolsDirectory)/dotnet
   - template: .azure-pipelines/mono.yml
     parameters:
       configuration: $(configuration)
@@ -96,6 +102,12 @@ jobs:
     displayName: choco install mono
     inputs:
       script: choco install mono --version 6.0.0.334 --yes
+  - task: UseDotNet@2
+    displayName: Stick with .NET Core SDK version compatible to Mono toolchain
+    inputs:
+      packageType: sdk
+      version: 3.0.102  # See also: https://github.com/mono/mono/issues/13537
+      installationPath: $(Agent.ToolsDirectory)/dotnet
   - template: .azure-pipelines/windows-net471.yml
     parameters:
       configuration: $(configuration)
@@ -117,6 +129,12 @@ jobs:
           https://github.com/planetarium/xunit-unity-runner/releases/download/0.2.3/xunit-unity-runner-0.2.3-StandaloneOSX.tar.bz2
         tar xvfj xunit-unity-runner-*.tar.bz2
         popd
+  - task: UseDotNet@2
+    displayName: Stick with .NET Core SDK version compatible to Mono toolchain
+    inputs:
+      packageType: sdk
+      version: 3.0.102  # See also: https://github.com/mono/mono/issues/13537
+      installationPath: $(Agent.ToolsDirectory)/dotnet
   - template: .azure-pipelines/mono.yml
     parameters:
       configuration: $(configuration)

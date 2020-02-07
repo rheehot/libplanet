@@ -94,7 +94,7 @@ namespace Libplanet.Crypto
             var nonce = new byte[NonceBitSize / 8];
             _secureRandom.NextBytes(nonce, 0, nonce.Length);
 
-            nonSecret = nonSecret ?? new byte[] { };
+            nonSecret ??= new byte[] { };
 
             var cipher = new GcmBlockCipher(new AesEngine());
             var parameters = new AeadParameters(
@@ -107,17 +107,15 @@ namespace Libplanet.Crypto
                 cipher.ProcessBytes(message, 0, message.Length, cipherText, 0);
             cipher.DoFinal(cipherText, len);
 
-            using (var combinedStream = new MemoryStream())
+            using var combinedStream = new MemoryStream();
+            using (var binaryWriter = new BinaryWriter(combinedStream))
             {
-                using (var binaryWriter = new BinaryWriter(combinedStream))
-                {
-                    binaryWriter.Write(nonSecret);
-                    binaryWriter.Write(nonce);
-                    binaryWriter.Write(cipherText);
-                }
-
-                return combinedStream.ToArray();
+                binaryWriter.Write(nonSecret);
+                binaryWriter.Write(nonce);
+                binaryWriter.Write(cipherText);
             }
+
+            return combinedStream.ToArray();
         }
 
         /// <summary>

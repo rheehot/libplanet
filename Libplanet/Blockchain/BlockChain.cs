@@ -461,12 +461,7 @@ namespace Libplanet.Blockchain
                 }
             }
 
-            if (blockStates.TryGetValue(stateKey, out IValue state))
-            {
-                return state;
-            }
-
-            return null;
+            return blockStates.TryGetValue(stateKey, out IValue state) ? state : null;
         }
 
         /// <summary>
@@ -1094,8 +1089,7 @@ namespace Libplanet.Blockchain
 
                     foreach ((Address address, int txCount) in signers)
                     {
-                        int existingValue = 0;
-                        signersToStrip.TryGetValue(address, out existingValue);
+                        signersToStrip.TryGetValue(address, out var existingValue);
                         signersToStrip[address] = existingValue + txCount;
                     }
                 }
@@ -1107,8 +1101,7 @@ namespace Libplanet.Blockchain
                     Address address = pair.Key;
                     long existingNonce = pair.Value;
                     long txNonce = existingNonce;
-                    int staleTxCount = 0;
-                    if (signersToStrip.TryGetValue(address, out staleTxCount))
+                    if (signersToStrip.TryGetValue(address, out var staleTxCount))
                     {
                         txNonce -= staleTxCount;
                     }
