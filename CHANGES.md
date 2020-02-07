@@ -8,6 +8,14 @@ To be released.
 
 ### Backward-incompatible API changes
 
+ -  The existing `Swarm<T>.PreloadAsync(TimeSpan?, IProgress<PreloadState>,
+    IImmutableSet<Address>, EventHandler<PreloadBlockDownloadFailEventArgs>,
+    CancellationToken)` method has been replaced by
+    `Swarm<T>.PreloadAsync(TimeSpan?, IProgress<PreloadState>, IImmutableSet<Address>,
+    EventHandler<PreloadBlockDownloadFailEventArgs>, long, CancellationToken)`
+    method where `long`-typed `thickness` indicates thickness of recent states.
+    [[#790]]
+
 ### Backward-incompatible network protocol changes
 
  -  `BaseStore` class became to implement `IDisposable`.  [[#789]]
@@ -20,9 +28,12 @@ To be released.
  -  Added `BlockHeader` struct.  [[#785]]
  -  Added `IStore.GetBlockDigest(HashDigest<SHA256>)` method.  [[#785]]
  -  Added `Block<T>.ToBlockDigest()` method.  [[#785]]
+ -  Added `IStore.PruneBlockStates<T>(Guid, Block<T>)` method.  [[#790]]
 
 ### Behavioral changes
 
+ -  `Swarm<T>.PreloadAsync()` became to prune states until its parameter
+    `thickness` if any trusted peers were given.  [[#790]]
  -  `BlockChain.MineBlock()` method became to ignore transactions having
     lower nonce than the expected nonce in the chain.  [[#791]]
 
@@ -40,6 +51,7 @@ To be released.
 [#785]: https://github.com/planetarium/libplanet/pull/785
 [#788]: https://github.com/planetarium/libplanet/pull/788
 [#789]: https://github.com/planetarium/libplanet/pull/789
+[#790]: https://github.com/planetarium/libplanet/pull/790
 [#791]: https://github.com/planetarium/libplanet/pull/791
 
 Version 0.8.0
