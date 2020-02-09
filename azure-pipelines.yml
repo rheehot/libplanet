@@ -69,7 +69,7 @@ jobs:
     displayName: Stick with .NET Core SDK version compatible to Mono toolchain
     inputs:
       packageType: sdk
-      version: 3.0.102  # See also: https://github.com/mono/mono/issues/13537
+      version: 3.1.101  # See also: https://github.com/mono/mono/issues/13537
       installationPath: $(Agent.ToolsDirectory)/dotnet
   - template: .azure-pipelines/mono.yml
     parameters:
@@ -85,7 +85,7 @@ jobs:
     displayName: Stick with .NET Core SDK version compatible to Mono toolchain
     inputs:
       packageType: sdk
-      version: 3.0.102  # See also: https://github.com/mono/mono/issues/13537
+      version: 3.1.101  # See also: https://github.com/mono/mono/issues/13537
       installationPath: $(Agent.ToolsDirectory)/dotnet
   - template: .azure-pipelines/mono.yml
     parameters:
@@ -106,7 +106,7 @@ jobs:
     displayName: Stick with .NET Core SDK version compatible to Mono toolchain
     inputs:
       packageType: sdk
-      version: 3.0.102  # See also: https://github.com/mono/mono/issues/13537
+      version: 3.1.101  # See also: https://github.com/mono/mono/issues/13537
       installationPath: $(Agent.ToolsDirectory)/dotnet
   - template: .azure-pipelines/windows-net471.yml
     parameters:
@@ -133,7 +133,7 @@ jobs:
     displayName: Stick with .NET Core SDK version compatible to Mono toolchain
     inputs:
       packageType: sdk
-      version: 3.0.102  # See also: https://github.com/mono/mono/issues/13537
+      version: 3.1.101  # See also: https://github.com/mono/mono/issues/13537
       installationPath: $(Agent.ToolsDirectory)/dotnet
   - template: .azure-pipelines/mono.yml
     parameters:
