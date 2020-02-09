@@ -19,10 +19,10 @@ steps:
     arguments: install xunit.runner.console
 
 - task: CmdLine@2
-  displayName: msbuild /restore
+  displayName: dotnet msbuild /restore
   inputs:
     script: |
-      msbuild \
+      dotnet msbuild \
         /restore \
         /p:Configuration=${{ parameters.configuration }}
 
