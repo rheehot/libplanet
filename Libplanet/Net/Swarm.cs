@@ -260,7 +260,7 @@ namespace Libplanet.Net
         /// period of time.  This can lead a game startup slow.  If you want to omit rendering of
         /// these actions in the behind blocks use <see cref=
         /// "PreloadAsync(TimeSpan?, IProgress{PreloadState}, IImmutableSet{Address},
-        /// EventHandler{PreloadBlockDownloadFailEventArgs}, CancellationToken)"
+        /// EventHandler{PreloadBlockDownloadFailEventArgs}, long, CancellationToken)"
         /// /> method too.</remarks>
         public async Task StartAsync(
             TimeSpan dialTimeout,
@@ -391,6 +391,7 @@ namespace Libplanet.Net
         /// <param name="blockDownloadFailed">
         /// The <see cref="EventHandler" /> triggered when block downloading fails.
         /// </param>
+        /// <param name="thickness">A thickness to leave state history.</param>
         /// <param name="cancellationToken">
         /// A cancellation token used to propagate notification that this
         /// operation should be canceled.
@@ -407,6 +408,7 @@ namespace Libplanet.Net
             IProgress<PreloadState> progress = null,
             IImmutableSet<Address> trustedStateValidators = null,
             EventHandler<PreloadBlockDownloadFailEventArgs> blockDownloadFailed = null,
+            long thickness = 10,
             CancellationToken cancellationToken = default(CancellationToken)
         )
         {
@@ -537,6 +539,13 @@ namespace Libplanet.Net
                         receivedStateHeight,
                         progress,
                         cancellationToken);
+                }
+
+                if (trustedStateValidators.Any() && height > thickness)
+                {
+                    _store.PruneBlockStates(
+                        workspace.Id,
+                        workspace[height - thickness]);
                 }
 
                 complete = true;
