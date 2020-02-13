@@ -141,7 +141,7 @@ To sum up, the instruction is like below (the example is assuming Linux):
 
     msbuild -r
     xunit-unity-runner/StandaloneLinux64 \
-      "`pwd`"/*.Tests/bin/Debug/net461/*.Tests.dll
+      "`pwd`"/*.Tests/bin/Debug/net47/*.Tests.dll
 
 [xunit-unity-runner]: https://github.com/planetarium/xunit-unity-runner
 [4]: https://github.com/planetarium/xunit-unity-runner/releases/latest
