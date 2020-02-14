@@ -30,9 +30,11 @@ steps:
   displayName: ${{ parameters.testDisplayName }}
   inputs:
     script: |
-      ${{ parameters.testCommand }} \
-        "$(pwd)"/*.Tests/bin/${{ parameters.configuration }}/net*/*.Tests.dll \
-        ${{ parameters.testArguments }}
+      for f in *Tests; do
+        ${{ parameters.testCommand }} \
+          $(pwd)/"$f"/bin/${{ parameters.configuration }}/net*/"$f".dll \
+          ${{ parameters.testArguments }}
+      done
   env:
     TURN_SERVER_URL: ${{ parameters.turnServerUrl }}
     MONO_THREADS_SUSPEND: preemptive
