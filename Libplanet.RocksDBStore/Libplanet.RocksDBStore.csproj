@@ -42,6 +42,7 @@ Sdk="Microsoft.NET.Sdk">
   </PackageReference>
   <PackageReference Include="Serilog" Version="2.8.0" />
   <PackageReference Include="RocksDbSharp" Version="6.2.2" />
+  <PackageReference Include="RocksDbNative" Version="6.2.2" />
 </ItemGroup>
 
 <ItemGroup>
