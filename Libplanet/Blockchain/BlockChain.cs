@@ -158,7 +158,7 @@ namespace Libplanet.Blockchain
         /// <summary>
         /// An event which is invoked when <see cref="Tip"/> is changed.
         /// </summary>
-        public event EventHandler<TipChangedEventArgs> TipChanged;
+        public event EventHandler<TipChangedEventArgs>? TipChanged;
 
         public IBlockPolicy<T> Policy { get; }
 
@@ -166,7 +166,7 @@ namespace Libplanet.Blockchain
         /// The topmost <see cref="Block{T}"/> of the current blockchain.
         /// Can be <c>null</c> if the blockchain is empty.
         /// </summary>
-        public Block<T> Tip
+        public Block<T>? Tip
         {
             get
             {
@@ -284,8 +284,8 @@ namespace Libplanet.Blockchain
         /// use <see cref="DateTimeOffset.UtcNow"/> as default.</param>
         /// <returns>The genesis block mined with parameters.</returns>
         public static Block<T> MakeGenesisBlock(
-            IEnumerable<T> actions = null,
-            PrivateKey privateKey = null,
+            IEnumerable<T>? actions = null,
+            PrivateKey? privateKey = null,
             DateTimeOffset? timestamp = null)
         {
             privateKey = privateKey ?? new PrivateKey();
@@ -375,7 +375,7 @@ namespace Libplanet.Blockchain
         /// this exception is not thrown and incomplete states are calculated
         /// and filled on the fly instead.
         /// </exception>
-        public IValue GetState(
+        public IValue? GetState(
             Address address,
             HashDigest<SHA256>? offset = null,
             bool completeStates = false
@@ -694,7 +694,7 @@ namespace Libplanet.Blockchain
         public Transaction<T> MakeTransaction(
             PrivateKey privateKey,
             IEnumerable<T> actions,
-            IImmutableSet<Address> updatedAddresses = null,
+            IImmutableSet<Address>? updatedAddresses = null,
             DateTimeOffset? timestamp = null)
         {
             timestamp = timestamp ?? DateTimeOffset.UtcNow;
@@ -931,7 +931,7 @@ namespace Libplanet.Blockchain
 
             if (!(txActionEvaluations is null) && txActionEvaluations.Count > 0)
             {
-                lastStates = txActionEvaluations[txActionEvaluations.Count - 1].OutputStates;
+                lastStates = txActionEvaluations[^1].OutputStates;
             }
 
             Address miner = block.Miner.GetValueOrDefault();
@@ -1180,7 +1180,7 @@ namespace Libplanet.Blockchain
                 "Swapping block chain. (from: {fromChainId}) (to: {toChainId})", Id, other.Id);
 
             // Finds the branch point.
-            Block<T> topmostCommon = null;
+            Block<T>? topmostCommon = null;
             if (!(Tip is null))
             {
                 long shorterHeight =
@@ -1217,7 +1217,7 @@ namespace Libplanet.Blockchain
 
                 // Unrender stale actions.
                 for (
-                    Block<T> b = Tip;
+                    Block<T>? b = Tip;
                     !(b is null) && b.Index > (topmostCommon?.Index ?? -1) &&
                     b.PreviousHash is HashDigest<SHA256> ph;
                     b = this[ph]
@@ -1239,7 +1239,7 @@ namespace Libplanet.Blockchain
                 _logger.Debug($"Unrender for {nameof(Swap)}() is completed.");
             }
 
-            IEnumerable<TxId> GetTxIdsWithRange(BlockChain<T> chain, Block<T> start, Block<T> end)
+            IEnumerable<TxId> GetTxIdsWithRange(BlockChain<T> chain, Block<T>? start, Block<T>? end)
                 => Enumerable
                     .Range((int)start.Index + 1, (int)(end.Index - start.Index))
                     .SelectMany(x => chain[x].Transactions.Select(tx => tx.Id));
@@ -1321,8 +1321,8 @@ namespace Libplanet.Blockchain
             if (Store.GetBlockStates(block.Hash) is null)
             {
                 HashDigest<SHA256> blockHash = block.Hash;
-                IAccountStateDelta lastStates = actionEvaluations.Count > 0
-                    ? actionEvaluations[actionEvaluations.Count - 1].OutputStates
+                IAccountStateDelta? lastStates = actionEvaluations.Count > 0
+                    ? actionEvaluations[^1].OutputStates
                     : null;
                 ImmutableDictionary<string, IValue> totalDelta =
                     updatedAddresses.ToImmutableDictionary(

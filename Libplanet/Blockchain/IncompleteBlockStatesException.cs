@@ -21,7 +21,7 @@ namespace Libplanet.Blockchain
         /// </param>
         public IncompleteBlockStatesException(
             HashDigest<SHA256> blockHash,
-            string message = null)
+            string? message = null)
             : base(
                 message is null
                     ? $"{blockHash} lacks states"

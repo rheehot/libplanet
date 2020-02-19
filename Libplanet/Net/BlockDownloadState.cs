@@ -8,6 +8,23 @@ namespace Libplanet.Net
     [Equals]
     public class BlockDownloadState : PreloadState
     {
+        public BlockDownloadState(
+            HashDigest<SHA256> receivedBlockHash,
+            long totalBlockCount,
+            long receivedBlockCount,
+            BoundPeer sourcePeer)
+        {
+            ReceivedBlockHash = receivedBlockHash;
+            TotalBlockCount = totalBlockCount;
+            ReceivedBlockCount = receivedBlockCount;
+            SourcePeer = sourcePeer;
+        }
+
+        /// <summary>
+        /// The hash digest of the block just received.
+        /// </summary>
+        public HashDigest<SHA256> ReceivedBlockHash { get; internal set; }
+
         /// <summary>
         /// Total number of blocks to receive in the current batch.
         /// </summary>
@@ -17,11 +34,6 @@ namespace Libplanet.Net
         /// The number of currently received blocks.
         /// </summary>
         public long ReceivedBlockCount { get; internal set; }
-
-        /// <summary>
-        /// The hash digest of the block just received.
-        /// </summary>
-        public HashDigest<SHA256> ReceivedBlockHash { get; internal set; }
 
         /// <inheritdoc />
         public override int CurrentPhase => 1;

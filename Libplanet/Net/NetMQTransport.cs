@@ -862,11 +862,10 @@ namespace Libplanet.Net
 #pragma warning disable CS4014
                     Task.Run(async () =>
                     {
-                        using (var proxy = new NetworkStreamProxy(stream))
-                        {
-                            await proxy.StartAsync(IPAddress.Loopback, _listenPort.Value);
-                        }
-                    }).ContinueWith(_ => stream.Dispose());
+                        using var proxy = new NetworkStreamProxy(stream);
+                        await proxy.StartAsync(IPAddress.Loopback, _listenPort.Value);
+                    }, cancellationToken)
+                        .ContinueWith(_ => stream.Dispose(), cancellationToken);
 #pragma warning restore CS4014
                 }
                 catch (Exception e)

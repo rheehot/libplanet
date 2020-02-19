@@ -11,16 +11,16 @@ namespace Libplanet.Net
     {
         public IceServer(
             IEnumerable<string> urls,
-            string username = null,
-            string credential = null)
+            string? username = null,
+            string? credential = null)
             : this(urls.Select(u => new Uri(u)), username, credential)
         {
         }
 
         public IceServer(
             IEnumerable<Uri> urls,
-            string username = null,
-            string credential = null)
+            string? username = null,
+            string? credential = null)
         {
             Urls = urls;
             Username = username;
@@ -29,9 +29,9 @@ namespace Libplanet.Net
 
         public IEnumerable<Uri> Urls { get; }
 
-        public string Username { get; }
+        public string? Username { get; }
 
-        public string Credential { get; }
+        public string? Credential { get; }
 
         internal static async Task<TurnClient> CreateTurnClient(
             IEnumerable<IceServer> iceServers)

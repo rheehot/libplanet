@@ -37,13 +37,13 @@ namespace Libplanet.Store
             {
                 Transaction<T> tx = Store.GetTransaction<T>(key);
 
-                if (tx == null)
+                if (tx is null)
                 {
                     throw new KeyNotFoundException();
                 }
 
-                Trace.Assert(key.Equals(tx?.Id));
-                tx?.Validate();
+                Trace.Assert(key.Equals(tx.Id));
+                tx.Validate();
 
                 return tx;
             }

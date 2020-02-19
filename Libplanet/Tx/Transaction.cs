@@ -30,7 +30,7 @@ namespace Libplanet.Tx
     {
         private const string TimestampFormat = "yyyy-MM-ddTHH:mm:ss.ffffffZ";
 
-        private byte[] _signature;
+        private byte[] _signature = default!;
 
         /// <summary>
         /// Creates a new <see cref="Transaction{T}"/>.
@@ -377,7 +377,7 @@ namespace Libplanet.Tx
             long nonce,
             PrivateKey privateKey,
             IEnumerable<T> actions,
-            IImmutableSet<Address> updatedAddresses = null,
+            IImmutableSet<Address>? updatedAddresses = null,
             DateTimeOffset? timestamp = null
         )
         {
@@ -631,7 +631,7 @@ namespace Libplanet.Tx
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj))
             {

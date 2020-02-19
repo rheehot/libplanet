@@ -242,7 +242,7 @@ namespace Libplanet
             return 0;
         }
 
-        int IComparable.CompareTo(object obj)
+        int IComparable.CompareTo(object? obj)
         {
             if (obj is Address other)
             {

@@ -700,7 +700,7 @@ namespace Libplanet.Net.Protocols
             }
         }
 
-        private async Task<BoundPeer> ProcessFoundForSpecificAsync(
+        private async Task<BoundPeer?> ProcessFoundForSpecificAsync(
             ConcurrentBag<BoundPeer> history,
             IEnumerable<BoundPeer> found,
             Address target,
@@ -716,7 +716,7 @@ namespace Libplanet.Net.Protocols
             if (peers.Count == 0)
             {
                 _logger.Debug("No any neighbor received.");
-                return peerFound;
+                return null;
             }
 
             peers = Kademlia.SortByDistance(peers, target);

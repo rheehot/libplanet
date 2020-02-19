@@ -16,7 +16,7 @@ namespace Libplanet.Blockchain.Policies
         /// <summary>
         /// A block action to execute and be rendered for every block.
         /// </summary>
-        IAction BlockAction { get; }
+        IAction? BlockAction { get; }
 
         /// <summary>
         /// Checks if <paramref name="nextBlock"/> is invalid, and if that
@@ -31,7 +31,7 @@ namespace Libplanet.Blockchain.Policies
         /// <returns>The reason why the given <paramref name="blocks"/> are
         /// <em>invalid</em>, or <c>null</c> if <paramref name="blocks"/> are
         /// <em>valid</em>.</returns>
-        InvalidBlockException ValidateNextBlock(
+        InvalidBlockException? ValidateNextBlock(
             BlockChain<T> blocks,
             Block<T> nextBlock);
 

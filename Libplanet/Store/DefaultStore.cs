@@ -733,12 +733,7 @@ namespace Libplanet.Store
             string collId = StateRefId(chainId);
             LiteCollection<StateRefDoc> coll = _db.GetCollection<StateRefDoc>(collId);
             IEnumerable<StateRefDoc> stateRefDocs = keys
-                .Select(key => new StateRefDoc
-                {
-                    StateKey = key,
-                    BlockIndex = blockIndex,
-                    BlockHash = blockHash,
-                })
+                .Select(key => new StateRefDoc(key, blockIndex, blockHash))
                 .Where(doc => !coll.Exists(d => d.Id == doc.Id));
             coll.InsertBulk(stateRefDocs);
             coll.EnsureIndex(nameof(StateRefDoc.StateKey));
@@ -948,6 +943,13 @@ namespace Libplanet.Store
 
         internal class StateRefDoc
         {
+            public StateRefDoc(string stateKey, long blockIndex, HashDigest<SHA256> blockHash)
+            {
+                StateKey = stateKey;
+                BlockIndex = blockIndex;
+                BlockHash = blockHash;
+            }
+
             public string StateKey { get; set; }
 
             public long BlockIndex { get; set; }
@@ -960,15 +962,9 @@ namespace Libplanet.Store
             [BsonIgnore]
             public HashDigest<SHA256> BlockHash
             {
-                get
-                {
-                    return HashDigest<SHA256>.FromString(BlockHashString);
-                }
+                get => HashDigest<SHA256>.FromString(BlockHashString);
 
-                set
-                {
-                    BlockHashString = value.ToString();
-                }
+                set => BlockHashString = value.ToString();
             }
         }
 

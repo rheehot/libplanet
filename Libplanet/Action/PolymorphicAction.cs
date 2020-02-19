@@ -202,7 +202,7 @@ namespace Libplanet.Action
             .Where(t => t.IsDefined(typeof(ActionTypeAttribute)))
             .ToDictionary(ActionTypeAttribute.ValueOf, t => t);
 
-        private T _innerAction;
+        private T _innerAction = default!;
 
         /// <summary>
         /// Do not use this constructor.

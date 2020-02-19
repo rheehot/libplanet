@@ -89,12 +89,12 @@ namespace Libplanet.Crypto
         /// </returns>
         /// <seealso cref="Decrypt(byte[], int)"/>
         [Pure]
-        public byte[] Encrypt(byte[] message, byte[] nonSecret = null)
+        public byte[] Encrypt(byte[] message, byte[]? nonSecret = null)
         {
             var nonce = new byte[NonceBitSize / 8];
             _secureRandom.NextBytes(nonce, 0, nonce.Length);
 
-            nonSecret = nonSecret ?? new byte[] { };
+            nonSecret ??= new byte[] { };
 
             var cipher = new GcmBlockCipher(new AesEngine());
             var parameters = new AeadParameters(

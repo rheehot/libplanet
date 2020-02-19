@@ -75,7 +75,7 @@ namespace Libplanet.Store
         public abstract IEnumerable<HashDigest<SHA256>> IterateBlockHashes();
 
         /// <inheritdoc/>
-        public Block<T> GetBlock<T>(HashDigest<SHA256> blockHash)
+        public Block<T>? GetBlock<T>(HashDigest<SHA256> blockHash)
             where T : IAction, new()
         {
             if (GetBlockDigest(blockHash) is BlockDigest blockDigest)

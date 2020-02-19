@@ -18,7 +18,7 @@ namespace Libplanet.Net.Messages
             IImmutableDictionary<
                 HashDigest<SHA256>,
                 IImmutableDictionary<Address, IValue>
-            > blockStates,
+            >? blockStates,
             IImmutableDictionary<Address, IImmutableList<HashDigest<SHA256>>> stateReferences
         )
         {

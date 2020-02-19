@@ -7,10 +7,6 @@ namespace Libplanet.Net
     [Serializable]
     public class InvalidMessageException : Exception
     {
-        public InvalidMessageException()
-        {
-        }
-
         public InvalidMessageException(string message)
             : base(message)
         {

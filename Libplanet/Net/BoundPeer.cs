@@ -31,7 +31,7 @@ namespace Libplanet.Net
             PublicKey publicKey,
             DnsEndPoint endPoint,
             int appProtocolVersion,
-            IPAddress publicIPAddress)
+            IPAddress? publicIPAddress)
         : base(publicKey, appProtocolVersion, publicIPAddress)
         {
             EndPoint = endPoint ?? throw new ArgumentNullException(nameof(endPoint));

@@ -30,7 +30,7 @@ namespace Libplanet.Blockchain.Policies
         /// <param name="difficultyBoundDivisor">Configures
         /// <see cref="DifficultyBoundDivisor"/>. 128 by default.</param>
         public BlockPolicy(
-            IAction blockAction = null,
+            IAction? blockAction = null,
             int blockIntervalMilliseconds = 5000,
             long minimumDifficulty = 1024,
             int difficultyBoundDivisor = 128)
@@ -56,7 +56,7 @@ namespace Libplanet.Blockchain.Policies
         /// <param name="difficultyBoundDivisor">Configures
         /// <see cref="DifficultyBoundDivisor"/>.</param>
         public BlockPolicy(
-            IAction blockAction,
+            IAction? blockAction,
             TimeSpan blockInterval,
             long minimumDifficulty,
             int difficultyBoundDivisor)
@@ -93,7 +93,7 @@ namespace Libplanet.Blockchain.Policies
         }
 
         /// <inheritdoc/>
-        public IAction BlockAction { get; }
+        public IAction? BlockAction { get; }
 
         /// <summary>
         /// An appropriate interval between consecutive <see cref="Block{T}"/>s.
@@ -110,14 +110,14 @@ namespace Libplanet.Blockchain.Policies
         private int DifficultyBoundDivisor { get; }
 
         /// <inheritdoc/>
-        public InvalidBlockException ValidateNextBlock(
+        public InvalidBlockException? ValidateNextBlock(
             BlockChain<T> blocks,
             Block<T> nextBlock)
         {
             long index = blocks.Count;
             long difficulty = GetNextBlockDifficulty(blocks);
 
-            Block<T> lastBlock = index >= 1 ? blocks[index - 1] : null;
+            Block<T>? lastBlock = index >= 1 ? blocks[index - 1] : null;
             HashDigest<SHA256>? prevHash = lastBlock?.Hash;
             DateTimeOffset? prevTimestamp = lastBlock?.Timestamp;
 

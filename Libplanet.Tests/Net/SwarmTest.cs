@@ -1428,13 +1428,8 @@ namespace Libplanet.Tests.Net
                 for (var i = 1; i < minerChain.Count; i++)
                 {
                     var b = minerChain[i];
-                    var state = new BlockDownloadState
-                    {
-                        ReceivedBlockHash = b.Hash,
-                        TotalBlockCount = 10,
-                        ReceivedBlockCount = i,
-                        SourcePeer = minerSwarm.AsPeer as BoundPeer,
-                    };
+                    var state = new BlockDownloadState(
+                        b.Hash, 10, i, minerSwarm.AsPeer as BoundPeer);
                     expectedStates.Add(state);
                 }
 

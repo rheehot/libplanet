@@ -296,7 +296,7 @@ namespace Libplanet.Blocks
         [Pure]
         public
         IEnumerable<Tuple<Transaction<T>, ActionEvaluation>>
-        EvaluateActionsPerTx(AccountStateGetter accountStateGetter = null)
+        EvaluateActionsPerTx(AccountStateGetter? accountStateGetter = null)
         {
             IAccountStateDelta delta =
                 new AccountStateDeltaImpl(

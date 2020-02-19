@@ -60,11 +60,11 @@ namespace Libplanet.Net
             PrivateKey privateKey,
             int appProtocolVersion,
             int workers = 5,
-            string host = null,
+            string? host = null,
             int? listenPort = null,
             DateTimeOffset? createdAt = null,
-            IEnumerable<IceServer> iceServers = null,
-            EventHandler<DifferentProtocolVersionEventArgs>
+            IEnumerable<IceServer>? iceServers = null,
+            EventHandler<DifferentProtocolVersionEventArgs>?
                 differentVersionPeerEncountered = null)
             : this(
                 blockChain,
@@ -88,11 +88,11 @@ namespace Libplanet.Net
             int? tableSize,
             int? bucketSize,
             int workers = 5,
-            string host = null,
+            string? host = null,
             int? listenPort = null,
             DateTimeOffset? createdAt = null,
-            IEnumerable<IceServer> iceServers = null,
-            EventHandler<DifferentProtocolVersionEventArgs> differentVersionPeerEncountered = null)
+            IEnumerable<IceServer>? iceServers = null,
+            EventHandler<DifferentProtocolVersionEventArgs>? differentVersionPeerEncountered = null)
         {
             BlockChain = blockChain ?? throw new ArgumentNullException(nameof(blockChain));
             _store = BlockChain.Store;
@@ -404,9 +404,9 @@ namespace Libplanet.Net
 #pragma warning restore MEN002 // Line is too long
         public async Task PreloadAsync(
             TimeSpan? dialTimeout = null,
-            IProgress<PreloadState> progress = null,
-            IImmutableSet<Address> trustedStateValidators = null,
-            EventHandler<PreloadBlockDownloadFailEventArgs> blockDownloadFailed = null,
+            IProgress<PreloadState>? progress = null,
+            IImmutableSet<Address>? trustedStateValidators = null,
+            EventHandler<PreloadBlockDownloadFailEventArgs>? blockDownloadFailed = null,
             CancellationToken cancellationToken = default(CancellationToken)
         )
         {
@@ -1219,7 +1219,7 @@ namespace Libplanet.Net
             BlockChain<T> blockChain,
             BoundPeer peer,
             HashDigest<SHA256>? stop,
-            IProgress<BlockDownloadState> progress,
+            IProgress<BlockDownloadState>? progress,
             long totalBlockCount,
             bool evaluateActions,
             CancellationToken cancellationToken
@@ -1227,7 +1227,7 @@ namespace Libplanet.Net
         {
             int retry = 3;
             long previousTipIndex = blockChain.Tip?.Index ?? -1;
-            BlockChain<T> synced = null;
+            BlockChain<T>? synced = null;
 
             try
             {
@@ -1280,7 +1280,7 @@ namespace Libplanet.Net
             {
                 if (synced is BlockChain<T> syncedNotNull)
                 {
-                    if (syncedNotNull.Id.Equals(blockChain?.Id))
+                    if (syncedNotNull.Id.Equals(blockChain.Id))
                     {
                         if (evaluateActions)
                         {
@@ -1299,7 +1299,7 @@ namespace Libplanet.Net
             BoundPeer peer,
             BlockChain<T> blockChain,
             HashDigest<SHA256>? stop,
-            IProgress<BlockDownloadState> progress,
+            IProgress<BlockDownloadState>? progress,
             long totalBlockCount,
             long receivedBlockCount,
             bool evaluateActions,
@@ -1313,7 +1313,7 @@ namespace Libplanet.Net
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    Block<T> tip = workspace?.Tip;
+                    Block<T>? tip = workspace.Tip;
 
                     _logger.Debug("Trying to find branchpoint...");
                     BlockLocator locator = workspace.GetBlockLocator();
@@ -1549,8 +1549,8 @@ namespace Libplanet.Net
             HashDigest<SHA256> target = getRecentStates.TargetBlockHash;
             IImmutableDictionary<HashDigest<SHA256>,
                 IImmutableDictionary<Address, IValue>
-            > blockStates = null;
-            IImmutableDictionary<string, IImmutableList<HashDigest<SHA256>>> stateRefs = null;
+            >? blockStates = null;
+            IImmutableDictionary<string, IImmutableList<HashDigest<SHA256>>>? stateRefs = null;
             long nextOffset = -1;
             int iteration = 0;
 

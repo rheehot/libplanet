@@ -155,7 +155,7 @@ namespace Libplanet.Store
         /// <paramref name="blockHash"/> is stored.</returns>
         /// <typeparam name="T">An <see cref="IAction"/> type.  It should match
         /// to <see cref="Block{T}"/>'s type parameter.</typeparam>
-        Block<T> GetBlock<T>(HashDigest<SHA256> blockHash)
+        Block<T>? GetBlock<T>(HashDigest<SHA256> blockHash)
             where T : IAction, new();
 
         /// <summary>

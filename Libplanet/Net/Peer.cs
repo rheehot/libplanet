@@ -25,7 +25,7 @@ namespace Libplanet.Net
         internal Peer(
             PublicKey publicKey,
             int appProtocolVersion,
-            IPAddress publicIPAddress)
+            IPAddress? publicIPAddress)
         {
             PublicKey = publicKey ??
                         throw new ArgumentNullException(nameof(publicKey));
