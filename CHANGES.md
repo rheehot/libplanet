@@ -8,14 +8,6 @@ To be released.
 
 ### Backward-incompatible API changes
 
- -  The existing `Swarm<T>.PreloadAsync(TimeSpan?, IProgress<PreloadState>,
-    IImmutableSet<Address>, EventHandler<PreloadBlockDownloadFailEventArgs>,
-    CancellationToken)` method has been replaced by
-    `Swarm<T>.PreloadAsync(TimeSpan?, IProgress<PreloadState>, IImmutableSet<Address>,
-    EventHandler<PreloadBlockDownloadFailEventArgs>, long, CancellationToken)`
-    method where `long`-typed `thickness` indicates thickness of recent states.
-    [[#790]]
-
 ### Backward-incompatible network protocol changes
 
  -  `BaseStore` class became to implement `IDisposable`.  [[#789]]
@@ -32,8 +24,6 @@ To be released.
 
 ### Behavioral changes
 
- -  `Swarm<T>.PreloadAsync()` became to prune states until its parameter
-    `thickness` if any trusted peers were given.  [[#790]]
  -  `BlockChain.MineBlock()` method became to ignore transactions having
     lower nonce than the expected nonce in the chain.  [[#791]]
 
