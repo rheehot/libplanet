@@ -30,13 +30,13 @@ namespace Libplanet.RocksDBStore
 
         private const string StateRefIdPrefix = "stateref_";
 
-        private const string TxNonceIdPrefix = "nonce_";
-
         private static readonly byte[] BlockKeyPrefix = { (byte)'B' };
 
         private static readonly byte[] BlockStateKeyPrefix = { (byte)'S' };
 
         private static readonly byte[] TxKeyPrefix = { (byte)'T' };
+
+        private static readonly byte[] TxNonceKeyPrefix = { (byte)'N' };
 
         private readonly ILogger _logger;
 
@@ -49,7 +49,8 @@ namespace Libplanet.RocksDBStore
             _lastStateRefCaches;
 
         private readonly LiteDatabase _liteDb;
-        private readonly RocksDb _rocksDb;
+        private readonly RocksDb _blockDb;
+        private readonly RocksDb _chainDb;
 
         /// <summary>
         /// Creates a new <seealso cref="RocksDBStore"/>.
@@ -136,7 +137,8 @@ namespace Libplanet.RocksDBStore
             var options = new DbOptions()
                 .SetCreateIfMissing();
 
-            _rocksDb = RocksDb.Open(options, path);
+            _blockDb = RocksDb.Open(options, Path.Combine(path, "blockdb"));
+            _chainDb = RocksDb.Open(options, Path.Combine(path, "chaindb"), new ColumnFamilies());
         }
 
         private LiteCollection<StagedTxIdDoc> StagedTxIds =>
@@ -154,9 +156,11 @@ namespace Libplanet.RocksDBStore
         public override void DeleteChainId(Guid chainId)
         {
             _liteDb.DropCollection(IndexCollection(chainId).Name);
-            _liteDb.DropCollection(TxNonceId(chainId));
             _liteDb.DropCollection(StateRefId(chainId));
             _lastStateRefCaches.Remove(chainId);
+
+            var cfName = chainId.ToString();
+            _chainDb.DropColumnFamily(cfName);
         }
 
         /// <inheritdoc />
@@ -300,7 +304,7 @@ namespace Libplanet.RocksDBStore
         /// <inheritdoc/>
         public override IEnumerable<TxId> IterateTransactionIds()
         {
-            Iterator it = _rocksDb.NewIterator();
+            Iterator it = _blockDb.NewIterator();
 
             for (it.Seek(TxKeyPrefix); it.Valid(); it.Next())
             {
@@ -321,7 +325,7 @@ namespace Libplanet.RocksDBStore
             }
 
             byte[] key = TxKey(txid);
-            byte[] bytes = _rocksDb.Get(key);
+            byte[] bytes = _blockDb.Get(key);
 
             if (bytes is null)
             {
@@ -343,12 +347,12 @@ namespace Libplanet.RocksDBStore
 
             byte[] key = TxKey(tx.Id);
 
-            if (!(_rocksDb.Get(key) is null))
+            if (!(_blockDb.Get(key) is null))
             {
                 return;
             }
 
-            _rocksDb.Put(key, tx.Serialize(true));
+            _blockDb.Put(key, tx.Serialize(true));
             _txCache.AddOrUpdate(tx.Id, tx);
         }
 
@@ -357,13 +361,13 @@ namespace Libplanet.RocksDBStore
         {
             byte[] key = TxKey(txid);
 
-            if (_rocksDb.Get(key) is null)
+            if (_blockDb.Get(key) is null)
             {
                 return false;
             }
 
             _txCache.Remove(txid);
-            _rocksDb.Remove(key);
+            _blockDb.Remove(key);
 
             return true;
         }
@@ -378,13 +382,13 @@ namespace Libplanet.RocksDBStore
 
             byte[] key = TxKey(txId);
 
-            return !(_rocksDb.Get(key) is null);
+            return !(_blockDb.Get(key) is null);
         }
 
         /// <inheritdoc/>
         public override IEnumerable<HashDigest<SHA256>> IterateBlockHashes()
         {
-            Iterator it = _rocksDb.NewIterator();
+            Iterator it = _blockDb.NewIterator();
 
             for (it.Seek(BlockKeyPrefix); it.Valid(); it.Next())
             {
@@ -405,7 +409,7 @@ namespace Libplanet.RocksDBStore
             }
 
             byte[] key = BlockKey(blockHash);
-            byte[] bytes = _rocksDb.Get(key);
+            byte[] bytes = _blockDb.Get(key);
 
             if (bytes is null)
             {
@@ -428,7 +432,7 @@ namespace Libplanet.RocksDBStore
 
             byte[] key = BlockKey(block.Hash);
 
-            if (!(_rocksDb.Get(key) is null))
+            if (!(_blockDb.Get(key) is null))
             {
                 return;
             }
@@ -439,7 +443,7 @@ namespace Libplanet.RocksDBStore
             }
 
             byte[] value = block.ToBlockDigest().Serialize();
-            _rocksDb.Put(key, value);
+            _blockDb.Put(key, value);
             _blockCache.AddOrUpdate(block.Hash, block.ToBlockDigest());
         }
 
@@ -448,13 +452,13 @@ namespace Libplanet.RocksDBStore
         {
             byte[] key = BlockKey(blockHash);
 
-            if (_rocksDb.Get(key) is null)
+            if (_blockDb.Get(key) is null)
             {
                 return false;
             }
 
             _blockCache.Remove(blockHash);
-            _rocksDb.Remove(key);
+            _blockDb.Remove(key);
 
             return true;
         }
@@ -469,7 +473,7 @@ namespace Libplanet.RocksDBStore
 
             byte[] key = BlockKey(blockHash);
 
-            return !(_rocksDb.Get(key) is null);
+            return !(_blockDb.Get(key) is null);
         }
 
         /// <inheritdoc/>
@@ -486,7 +490,7 @@ namespace Libplanet.RocksDBStore
 
             byte[] key = BlockStateKey(blockHash);
 
-            byte[] bytes = _rocksDb.Get(key);
+            byte[] bytes = _blockDb.Get(key);
 
             if (bytes is null)
             {
@@ -526,7 +530,7 @@ namespace Libplanet.RocksDBStore
             var codec = new Codec();
             byte[] value = codec.Encode(serialized);
 
-            _rocksDb.Put(key, value);
+            _blockDb.Put(key, value);
             _statesCache.AddOrUpdate(blockHash, states);
         }
 
@@ -688,39 +692,42 @@ namespace Libplanet.RocksDBStore
         /// <inheritdoc/>
         public override IEnumerable<KeyValuePair<Address, long>> ListTxNonces(Guid chainId)
         {
-            string collId = TxNonceId(chainId);
-            LiteCollection<BsonDocument> collection = _liteDb.GetCollection<BsonDocument>(collId);
-            foreach (BsonDocument doc in collection.FindAll())
+            ColumnFamilyHandle cf = GetColumnFamilyFromChainId(chainId);
+            Iterator it = _chainDb.NewIterator(cf);
+
+            for (it.Seek(TxNonceKeyPrefix); it.Valid(); it.Next())
             {
-                if (doc.TryGetValue("_id", out BsonValue id) && id.IsBinary)
-                {
-                    var address = new Address(id.AsBinary);
-                    if (doc.TryGetValue("v", out BsonValue v) && v.IsInt64 && v.AsInt64 > 0)
-                    {
-                        yield return new KeyValuePair<Address, long>(address, v.AsInt64);
-                    }
-                }
+                var addressBytes = it.Key()
+                    .Skip(TxNonceKeyPrefix.Length)
+                    .ToArray();
+                var address = new Address(addressBytes);
+                var nonce = BitConverter.ToInt64(it.Value(), 0);
+                yield return new KeyValuePair<Address, long>(address, nonce);
             }
         }
 
         /// <inheritdoc/>
         public override long GetTxNonce(Guid chainId, Address address)
         {
-            string collId = TxNonceId(chainId);
-            LiteCollection<BsonDocument> collection = _liteDb.GetCollection<BsonDocument>(collId);
-            var docId = new BsonValue(address.ToByteArray());
-            BsonDocument doc = collection.FindById(docId);
-            return doc is null ? 0 : (doc.TryGetValue("v", out BsonValue v) ? v.AsInt64 : 0);
+            ColumnFamilyHandle cf = GetColumnFamilyFromChainId(chainId);
+            byte[] key = TxNonceKey(address);
+            byte[] bytes = _chainDb.Get(key, cf);
+
+            return bytes is null
+                ? 0
+                : BitConverter.ToInt64(bytes, 0);
         }
 
         /// <inheritdoc/>
         public override void IncreaseTxNonce(Guid chainId, Address signer, long delta = 1)
         {
+            ColumnFamilyHandle cf = GetColumnFamilyFromChainId(chainId);
             long nextNonce = GetTxNonce(chainId, signer) + delta;
-            string collId = TxNonceId(chainId);
-            LiteCollection<BsonDocument> collection = _liteDb.GetCollection<BsonDocument>(collId);
-            var docId = new BsonValue(signer.ToByteArray());
-            collection.Upsert(docId, new BsonDocument() { ["v"] = new BsonValue(nextNonce) });
+
+            byte[] key = TxNonceKey(signer);
+            byte[] bytes = BitConverter.GetBytes(nextNonce);
+
+            _chainDb.Put(key, bytes, cf);
         }
 
         /// <inheritdoc/>
@@ -738,7 +745,8 @@ namespace Libplanet.RocksDBStore
         public override void Dispose()
         {
             _liteDb?.Dispose();
-            _rocksDb?.Dispose();
+            _chainDb?.Dispose();
+            _blockDb?.Dispose();
         }
 
         internal static Guid ParseChainId(string chainIdString) =>
@@ -750,11 +758,6 @@ namespace Libplanet.RocksDBStore
         private string StateRefId(Guid chainId)
         {
             return $"{StateRefIdPrefix}{FormatChainId(chainId)}";
-        }
-
-        private string TxNonceId(Guid chainId)
-        {
-            return $"{TxNonceIdPrefix}{FormatChainId(chainId)}";
         }
 
         private LiteCollection<HashDoc> IndexCollection(Guid chainId)
@@ -775,6 +778,29 @@ namespace Libplanet.RocksDBStore
         private byte[] TxKey(TxId txId)
         {
             return TxKeyPrefix.Concat(txId.ToByteArray()).ToArray();
+        }
+
+        private byte[] TxNonceKey(Address address)
+        {
+            return TxNonceKeyPrefix
+                .Concat(address.ToByteArray())
+                .ToArray();
+        }
+
+        private ColumnFamilyHandle GetColumnFamilyFromChainId(Guid chainId)
+        {
+            var cfName = chainId.ToString();
+            ColumnFamilyHandle cf;
+            try
+            {
+                cf = _chainDb.GetColumnFamily(cfName);
+            }
+            catch (KeyNotFoundException)
+            {
+                cf = _chainDb.CreateColumnFamily(new ColumnFamilyOptions(), cfName);
+            }
+
+            return cf;
         }
 
         internal class StateRefDoc
