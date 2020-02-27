@@ -26,9 +26,13 @@ namespace Libplanet.RocksDBStore
     /// <seealso cref="IStore"/>
     public class RocksDBStore : BaseStore
     {
-        private const string IndexColPrefix = "index_";
-
         private const string StateRefIdPrefix = "stateref_";
+
+        private const string blockDbName = "blockdb";
+
+        private const string chainDbName = "chaindb";
+
+        private static readonly byte[] IndexKeyPrefix = { (byte)'I' };
 
         private static readonly byte[] BlockKeyPrefix = { (byte)'B' };
 
@@ -51,6 +55,8 @@ namespace Libplanet.RocksDBStore
             _lastStateRefCaches;
 
         private readonly LiteDatabase _liteDb;
+        private readonly DbOptions _options;
+        private readonly string _path;
         private readonly RocksDb _blockDb;
         private readonly RocksDb _chainDb;
 
@@ -136,11 +142,12 @@ namespace Libplanet.RocksDBStore
             _lastStateRefCaches =
                 new Dictionary<Guid, LruCache<string, Tuple<HashDigest<SHA256>, long>>>();
 
-            var options = new DbOptions()
+            _path = path;
+            _options = new DbOptions()
                 .SetCreateIfMissing();
 
-            _blockDb = RocksDb.Open(options, Path.Combine(path, "blockdb"));
-            _chainDb = RocksDb.Open(options, Path.Combine(path, "chaindb"), new ColumnFamilies());
+            _blockDb = RocksDb.Open(_options, Path.Combine(_path, blockDbName));
+            _chainDb = RocksDb.Open(_options, Path.Combine(_path, chainDbName), new ColumnFamilies());
         }
 
         private LiteCollection<StagedTxIdDoc> StagedTxIds =>
@@ -149,15 +156,28 @@ namespace Libplanet.RocksDBStore
         /// <inheritdoc/>
         public override IEnumerable<Guid> ListChainIds()
         {
-            return _liteDb.GetCollectionNames()
-                .Where(name => name.StartsWith(IndexColPrefix))
-                .Select(name => ParseChainId(name.Substring(IndexColPrefix.Length)));
+            string path = Path.Combine(_path, chainDbName);
+
+            foreach (var name in RocksDb.ListColumnFamilies(_options, path))
+            {
+                Guid guid;
+
+                try
+                {
+                    guid = new Guid(name);
+                }
+                catch (FormatException)
+                {
+                    continue;
+                }
+
+                yield return guid;
+            }
         }
 
         /// <inheritdoc/>
         public override void DeleteChainId(Guid chainId)
         {
-            _liteDb.DropCollection(IndexCollection(chainId).Name);
             _liteDb.DropCollection(StateRefId(chainId));
             _lastStateRefCaches.Remove(chainId);
 
@@ -185,7 +205,7 @@ namespace Libplanet.RocksDBStore
         /// <inheritdoc/>
         public override long CountIndex(Guid chainId)
         {
-            return IndexCollection(chainId).Count();
+            return IterateIndexes(chainId, 0, null).Count();
         }
 
         /// <inheritdoc/>
@@ -194,9 +214,34 @@ namespace Libplanet.RocksDBStore
             int offset,
             int? limit)
         {
-            return IndexCollection(chainId)
-                .Find(Query.All(), offset, limit ?? int.MaxValue)
-                .Select(i => i.Hash);
+            var cf = GetColumnFamilyFromChainId(chainId);
+            var it = _chainDb.NewIterator(cf);
+            var skip = 0;
+            var count = 0;
+
+            for (it.Seek(IndexKeyPrefix); it.Valid(); it.Next())
+            {
+                if (!it.Key().Take(IndexKeyPrefix.Length).SequenceEqual(IndexKeyPrefix))
+                {
+                    continue;
+                }
+
+                if (skip < offset)
+                {
+                    skip += 1;
+                    continue;
+                }
+
+                if (count >= limit)
+                {
+                    break;
+                }
+
+                byte[] value = it.Value();
+                yield return new HashDigest<SHA256>(value);
+
+                count += 1;
+            }
         }
 
         /// <inheritdoc/>
@@ -212,13 +257,24 @@ namespace Libplanet.RocksDBStore
                 }
             }
 
-            return IndexCollection(chainId).FindById(index + 1)?.Hash;
+            ColumnFamilyHandle cf = GetColumnFamilyFromChainId(chainId);
+            byte[] indexBytes = BitConverter.GetBytes(index);
+            byte[] key = IndexKeyPrefix.Concat(indexBytes).ToArray();
+            byte[] bytes = _chainDb.Get(key, cf);
+            return bytes is null
+                ? (HashDigest<SHA256>?)null
+                : new HashDigest<SHA256>(bytes);
         }
 
         /// <inheritdoc/>
         public override long AppendIndex(Guid chainId, HashDigest<SHA256> hash)
         {
-            return IndexCollection(chainId).Insert(new HashDoc { Hash = hash }) - 1;
+            long index = CountIndex(chainId);
+            var indexBytes = BitConverter.GetBytes(index);
+            var key = IndexKeyPrefix.Concat(indexBytes).ToArray();
+            var cf = GetColumnFamilyFromChainId(chainId);
+            _chainDb.Put(key, hash.ToByteArray(), cf);
+            return index;
         }
 
         /// <inheritdoc/>
@@ -227,15 +283,14 @@ namespace Libplanet.RocksDBStore
             Guid destinationChainId,
             HashDigest<SHA256> branchPoint)
         {
-            LiteCollection<HashDoc> srcColl = IndexCollection(sourceChainId);
-            LiteCollection<HashDoc> destColl = IndexCollection(destinationChainId);
-
-            HashDigest<SHA256> genesisHash = IterateIndexes(sourceChainId, 0, 1).First();
-            destColl.InsertBulk(srcColl.FindAll()
-                .TakeWhile(i => !i.Hash.Equals(branchPoint)).Skip(1));
-            if (!branchPoint.Equals(genesisHash))
+            foreach (var hash in IterateIndexes(sourceChainId, 0, null))
             {
-                AppendIndex(destinationChainId, branchPoint);
+                if (hash.Equals(branchPoint))
+                {
+                    break;
+                }
+
+                AppendIndex(destinationChainId, hash);
             }
         }
 
@@ -754,11 +809,6 @@ namespace Libplanet.RocksDBStore
             return $"{StateRefIdPrefix}{FormatChainId(chainId)}";
         }
 
-        private LiteCollection<HashDoc> IndexCollection(Guid chainId)
-        {
-            return _liteDb.GetCollection<HashDoc>($"{IndexColPrefix}{FormatChainId(chainId)}");
-        }
-
         private byte[] BlockKey(HashDigest<SHA256> blockHash)
         {
             return BlockKeyPrefix.Concat(blockHash.ToByteArray()).ToArray();
@@ -821,13 +871,6 @@ namespace Libplanet.RocksDBStore
                     BlockHashString = value.ToString();
                 }
             }
-        }
-
-        private class HashDoc
-        {
-            public long Id { get; set; }
-
-            public HashDigest<SHA256> Hash { get; set; }
         }
 
         private class StagedTxIdDoc
