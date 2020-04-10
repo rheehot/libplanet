@@ -278,7 +278,7 @@ namespace Libplanet.Net
         public IAsyncEnumerable<Tuple<Block<TAction>, TPeer>> Complete(
             IReadOnlyList<TPeer> peers,
             BlockFetcher blockFetcher,
-            int millisecondsSingleSessionTimeout = 10000,
+            int millisecondsSingleSessionTimeout = 60000,
             CancellationToken cancellationToken = default
         ) =>
             Complete(
