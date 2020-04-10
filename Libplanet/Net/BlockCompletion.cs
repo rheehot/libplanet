@@ -455,22 +455,13 @@ namespace Libplanet.Net
                     await completeTask;
                 }
 
-                _tasks[peer] = Task.Run(
-                    async () =>
+                _tasks[peer] = action(peer, cancellationToken).ContinueWith(
+                    t =>
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        try
-                        {
-                            await action(peer, cancellationToken);
-                        }
-                        finally
-                        {
-                            _completions.Enqueue(peer);
-                            Interlocked.Increment(ref _finished);
-                        }
+                        _completions.Enqueue(peer);
+                        Interlocked.Increment(ref _finished);
                     },
-                    cancellationToken: cancellationToken
-                );
+                    cancellationToken);
             }
 
             public async Task WaitAll(CancellationToken cancellationToken = default)
