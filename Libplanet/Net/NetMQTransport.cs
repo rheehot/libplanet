@@ -922,6 +922,32 @@ namespace Libplanet.Net
                     throw;
                 }
             }
+            catch (SocketException se)
+            {
+                _logger.Debug($"Socket Exception occurred {nameof(CreatePermission)}: {se}");
+                await Task.Delay(1000);
+                _turnClient.Dispose();
+                _turnClient = await IceServer.CreateTurnClient(_iceServers);
+
+                if (!(_turnClient is null))
+                {
+                    _publicIPAddress = (await _turnClient.GetMappedAddressAsync()).Address;
+                    _behindNAT = await _turnClient.IsBehindNAT();
+                }
+
+                if (_behindNAT)
+                {
+                    IPEndPoint turnEp = await _turnClient.AllocateRequestAsync(
+                        TurnAllocationLifetime
+                    );
+                    _endPoint = new DnsEndPoint(turnEp.Address.ToString(), turnEp.Port);
+
+                    List<Task> tasks = BindMultipleProxies(
+                        _listenPort.Value, 3, _cancellationToken);
+                    tasks.Add(RefreshAllocate(_cancellationToken));
+                    tasks.Add(RefreshPermissions(_cancellationToken));
+                }
+            }
         }
 
         // FIXME: This method should be in Swarm<T>
